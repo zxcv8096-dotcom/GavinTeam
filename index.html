@@ -93,7 +93,6 @@
         console.log("Supabase 初始化成功");
     } catch (err) {
         console.error("Supabase 初始化失敗:", err);
-        alert("系統載入錯誤，請重新整理頁面");
     }
 
     // 1. 檢查登入狀態
@@ -108,28 +107,20 @@
         }
     }
 
-    // 2. 執行 Google 登入 (這就是按鈕在找的功能)
+    // 2. 執行 Google 登入
     async function signInWithGoogle() {
-        if (!supabase) return alert("系統尚未準備好，請稍候");
+        if (!supabase) return alert("系統尚未準備好");
         try {
-            console.log("正在呼叫 Google 登入...");
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.href, // 登入後回到這裡
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                    },
+                    redirectTo: window.location.href,
+                    queryParams: { access_type: 'offline', prompt: 'consent' },
                 }
             });
-            if (error) {
-                alert("登入錯誤: " + error.message);
-                console.error("Supabase Login Error:", error);
-            }
+            if (error) alert("登入錯誤: " + error.message);
         } catch (err) {
             alert("發生未預期的錯誤");
-            console.error("System Error:", err);
         }
     }
 
@@ -146,11 +137,9 @@
     function calculate() {
         const target = parseFloat(document.getElementById('target').value);
         const budget = parseFloat(document.getElementById('budget').value);
-
         if(!target || !budget) return alert("請輸入完整數值");
 
         const leads = Math.floor(budget / 35); 
-        
         const resultElement = document.getElementById('leads-result');
         let current = 0;
         const timer = setInterval(() => {
@@ -161,7 +150,6 @@
             }
             resultElement.innerText = current + " 名潛在客戶";
         }, 30);
-
         document.getElementById('result-area').style.display = 'block';
     }
 
@@ -171,7 +159,6 @@
         window.location.reload();
     }
 
-    // 啟動檢查
     checkSession();
 </script>
 
