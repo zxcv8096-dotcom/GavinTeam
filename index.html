@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GavinTeam 財富加速系統</title>
+    <title>GavinTeam 自動引流系統</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <style>
@@ -38,8 +38,8 @@
 <body>
 
 <div class="container">
-    <h1>GavinTeam 財富加速器</h1>
-    <p class="subtitle">解鎖您的專屬財務自由時間表<br>運用美股複利縮短 10 年奮鬥時間</p>
+    <h1>GavinTeam 自動引流系統</h1>
+    <p class="subtitle">專屬您的自動化獲客引擎<br>串聯 FB、IG 與 LINE 的全自動漏斗</p>
 
     <div id="login-section">
         <button class="btn-google" onclick="signInWithGoogle()">
@@ -53,39 +53,42 @@
         <div id="user-badge"></div>
         
         <div class="input-group">
-            <label>您的目標退休資產 (萬)</label>
-            <input type="number" id="target" placeholder="例如：3000">
+            <label>設定目標流量 (人/月)</label>
+            <input type="number" id="target" placeholder="例如：1000">
         </div>
         
         <div class="input-group">
-            <label>目前每月可存金額 (元)</label>
-            <input type="number" id="saving" placeholder="例如：20000">
+            <label>目前廣告預算 (元)</label>
+            <input type="number" id="saving" placeholder="例如：5000">
         </div>
 
-        <button class="btn-primary" onclick="calculate()">立即計算差距</button>
+        <button class="btn-primary" onclick="calculate()">分析引流成效</button>
 
         <div id="result-area">
-            <div>如果不做投資規劃，您還需要：</div>
-            <div class="highlight" id="years-result">-- 年</div>
+            <div>依照系統運算，您預計可獲得：</div>
+            <div class="highlight" id="years-result">-- 名潛在客戶</div>
             <p style="font-size: 13px; color: #4b5563; margin-top: 10px;">
-                通膨正在吃掉您的本金。想知道如何透過<br>
-                <strong>「美股 ETF + 槓桿配置」</strong> 提早達成？
+                想要將這些流量自動轉化為訂單？<br>
+                立即啟動 <strong>GavinTeam 自動化機器人</strong>
             </p>
             <a href="https://line.me/ti/p/您的LineID" target="_blank" class="cta-link">
-                ➤ 點此加入 GavinTeam 索取方案
+                ➤ 點此啟用系統權限
             </a>
         </div>
         
-        <button onclick="signOut()" style="background:none; border:none; color:#9ca3af; font-size:12px; margin-top:20px; cursor:pointer; text-decoration:underline;">登出帳號</button>
+        <button onclick="signOut()" style="background:none; border:none; color:#9ca3af; font-size:12px; margin-top:20px; cursor:pointer; text-decoration:underline;">登出系統</button>
     </div>
 </div>
 
 <script>
     // ==========================================
-    // 您的 Supabase 設定 (已填入)
+    // 您的 Supabase 設定 (已填入您提供的資訊)
     // ==========================================
     
+    // 您的專案網址
     const SUPABASE_URL = 'https://dgyizyaqxxmjcqspnlvm.supabase.co'; 
+    
+    // 您剛剛確認過的 Publishable Key
     const SUPABASE_KEY = 'sb_publishable_s2Vxi5ap4xLgrQNTYSh3qg_TSmPwGTO';
 
     // ==========================================
@@ -106,13 +109,25 @@
 
     // 2. 執行 Google 登入
     async function signInWithGoogle() {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.href // 登入後跳轉回這一頁
+        try {
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.href,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    },
+                }
+            });
+            if (error) {
+                alert("登入錯誤: " + error.message);
+                console.error("Supabase Error:", error);
             }
-        });
-        if (error) alert("登入錯誤: " + error.message);
+        } catch (err) {
+            alert("發生未預期的錯誤，請檢查 Supabase 設定");
+            console.error("System Error:", err);
+        }
     }
 
     // 3. 顯示主程式
@@ -120,20 +135,20 @@
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('app-section').style.display = 'block';
         document.getElementById('user-badge').style.display = 'block';
-        document.getElementById('user-badge').innerText = `已登入: ${user.email}`;
+        document.getElementById('user-badge').innerText = `管理員登入: ${user.email}`;
     }
 
-    // 4. 計算邏輯
+    // 4. 計算邏輯 (修改為流量計算)
     function calculate() {
         const target = parseFloat(document.getElementById('target').value);
         const saving = parseFloat(document.getElementById('saving').value);
 
         if(!target || !saving) return alert("請輸入完整數值");
 
-        // 簡單計算：目標(萬) * 10000 / (月存 * 12) = 年數
-        const years = Math.ceil((target * 10000) / (saving * 12));
+        // 簡單邏輯：預算 * 0.5 (假設轉換率)
+        const leads = Math.floor(saving * 0.15); 
         
-        document.getElementById('years-result').innerText = years + " 年";
+        document.getElementById('years-result').innerText = leads + " 名潛在客戶";
         document.getElementById('result-area').style.display = 'block';
     }
 
