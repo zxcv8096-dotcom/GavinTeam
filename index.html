@@ -3,28 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GavinTeam 財富加速與風險規劃系統</title>
-    <meta name="description" content="透過 GavinTeam 系統，試算您的財務自由時間表與潛在風險缺口。">
+    <title>GavinTeam 財富加速系統</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <style>
-        /* 視覺設計：簡潔、專業、強調行動 */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { max-width: 480px; width: 100%; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; font-size: 24px; margin-bottom: 10px; }
-        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; }
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #4a5568; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; }
+        h1 { color: #1a1a1a; font-size: 24px; margin-bottom: 8px; font-weight: 800; }
+        p.subtitle { color: #65676b; font-size: 14px; margin-bottom: 30px; line-height: 1.5; }
         
-        /* 核心按鈕：設計得讓人想按 */
-        .btn-calc { width: 100%; background: linear-gradient(135deg, #0066cc 0%, #004c99 100%); color: white; border: none; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: transform 0.1s; }
-        .btn-calc:active { transform: scale(0.98); }
+        /* 登入按鈕 */
+        .btn-google { background: white; color: #3c4043; border: 1px solid #dadce0; border-radius: 40px; padding: 12px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; gap: 10px; transition: background 0.2s; }
+        .btn-google:hover { background-color: #f7f8f8; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .btn-google img { width: 18px; height: 18px; }
+
+        /* 試算表單 */
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563; font-size: 14px; }
+        input { width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.2s; }
+        input:focus { border-color: #2563eb; outline: none; }
         
-        /* 結果區塊 (預設隱藏) */
-        #result-area { display: none; margin-top: 30px; padding: 20px; background: #f0f7ff; border-radius: 10px; border-left: 5px solid #0066cc; }
-        .result-title { font-size: 16px; font-weight: bold; color: #0066cc; }
-        .result-number { font-size: 32px; font-weight: bold; color: #2c3e50; margin: 10px 0; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        /* 結果區 */
+        #result-area { margin-top: 25px; padding: 20px; background: #eff6ff; border-radius: 12px; border: 1px solid #dbeafe; display: none; }
+        .highlight { color: #2563eb; font-weight: 800; font-size: 28px; }
+        .cta-link { display: inline-block; margin-top: 15px; color: #059669; font-weight: bold; text-decoration: none; border-bottom: 2px solid #059669; padding-bottom: 2px; }
         
-        /* 導流按鈕 (漏斗的終點) */
-        .cta-box { margin-top: 20px; text-align: center; }
-        .btn-line { background-color: #06c755; color: white; text-decoration: none; padding: 12px 30px; border-radius: 50px; font-weight:
+        /* 用戶資訊小字 */
+        #user-badge { font-size: 12px; color: #9ca3af; margin-bottom: 20px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>GavinTeam 財富加速器</h1>
+    <p class="subtitle">解鎖您的專屬財務自由時間表<br>運用美股複利縮短 10 年奮鬥時間</p>
+
+    <div id="login-section">
+        <button class="btn-google" onclick="signInWithGoogle()">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
+            使用 Google 帳號繼續
+        </button>
+        <p style="font-size: 12px; color: #9ca3af; margin-top: 15px;">安全登入由 Supabase 技術支援</p>
+    </div>
+
+    <div id="app-section" style="display: none;">
+        <div id="user-badge"></div>
+        
+        <div class="input-group">
+            <label>您的目標退休資產 (萬)</label>
+            <input type="number" id="target" placeholder="例如：3000">
+        </div>
+        
+        <div class="input-group">
+            <label>目前每月可存金額 (元)</label>
+            <input type="number" id="saving" placeholder="例如：20000">
+        </div>
+
+        <button class="btn-primary" onclick="calculate()">立即計算差距</button>
+
+        <div id="result-area">
+            <div>如果不做投資規劃，您還需要：</div>
+            <div class="highlight" id="years-result">-- 年</div>
+            <p style="font-size: 13px; color: #4b5563; margin-top: 10px;">
+                通膨正在吃掉您的本金。想知道如何透過<br>
+                <strong>「美股 ETF + 槓桿配置」</strong> 提早達成？
+            </p>
+            <a href="https://line.me/ti/p/您的LineID" target="_blank" class="cta-link">
+                ➤ 點此加入 GavinTeam 索取方案
+            </a>
+        </div>
+        
+        <button onclick="signOut()" style="background:none; border:none; color:#9ca3af; font-size:12px; margin-top:20px; cursor:pointer; text-decoration:underline;">登出帳號</button>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // 您的 Supabase 設定 (已填入)
+    // ==========================================
+    
+    const SUPABASE_URL = 'https://dgyizyaqxxmjcqspnlvm.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_s2Vxi5ap4xLgrQNTYSh3qg_TSmPwGTO';
+
+    // ==========================================
+
+    // 初始化 Supabase
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 1. 檢查登入狀態
+    async function checkSession() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            showApp(session.user);
+        } else {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('app-section').style.display = 'none';
+        }
+    }
+
+    // 2. 執行 Google 登入
+    async function signInWithGoogle() {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.href // 登入後跳轉回這一頁
+            }
+        });
+        if (error) alert("登入錯誤: " + error.message);
+    }
+
+    // 3. 顯示主程式
+    function showApp(user) {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('app-section').style.display = 'block';
+        document.getElementById('user-badge').style.display = 'block';
+        document.getElementById('user-badge').innerText = `已登入: ${user.email}`;
+    }
+
+    // 4. 計算邏輯
+    function calculate() {
+        const target = parseFloat(document.getElementById('target').value);
+        const saving = parseFloat(document.getElementById('saving').value);
+
+        if(!target || !saving) return alert("請輸入完整數值");
+
+        // 簡單計算：目標(萬) * 10000 / (月存 * 12) = 年數
+        const years = Math.ceil((target * 10000) / (saving * 12));
+        
+        document.getElementById('years-result').innerText = years + " 年";
+        document.getElementById('result-area').style.display = 'block';
+    }
+
+    // 5. 登出
+    async function signOut() {
+        await supabase.auth.signOut();
+        window.location.reload();
+    }
+
+    // 程式啟動
+    checkSession();
+</script>
+
+</body>
+</html>
