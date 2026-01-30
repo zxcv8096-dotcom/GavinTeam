@@ -1,166 +1,82 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GavinTeam 自動引流系統</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; }
-        
-        h1 { color: #1a1a1a; font-size: 26px; margin-bottom: 8px; font-weight: 800; letter-spacing: -0.5px; }
-        p.subtitle { color: #65676b; font-size: 15px; margin-bottom: 30px; line-height: 1.6; }
-        
-        .btn-google { background: white; color: #3c4043; border: 1px solid #dadce0; border-radius: 40px; padding: 12px; font-weight: 500; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; gap: 10px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .btn-google:hover { background-color: #f7f8f8; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transform: translateY(-1px); }
-        .btn-google img { width: 20px; height: 20px; }
-
-        .input-group { margin-bottom: 20px; text-align: left; }
-        label { display: block; margin-bottom: 8px; font-weight: 700; color: #374151; font-size: 14px; }
-        input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.2s; background: #f9fafb; }
-        input:focus { border-color: #2563eb; background: white; outline: none; }
-        
-        .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: transform 0.1s; }
-        .btn-primary:active { transform: scale(0.98); }
-
-        #result-area { margin-top: 25px; padding: 25px; background: #eff6ff; border-radius: 12px; border: 1px solid #dbeafe; display: none; animation: fadeIn 0.5s; }
-        .highlight { color: #1d4ed8; font-weight: 800; font-size: 32px; margin: 10px 0; }
-        .cta-link { display: inline-block; margin-top: 15px; color: #059669; font-weight: bold; text-decoration: none; border-bottom: 2px solid #059669; padding-bottom: 2px; font-size: 15px; }
-        
-        #user-badge { font-size: 12px; color: #6b7280; margin-bottom: 20px; display: none; background: #f3f4f6; padding: 4px 12px; border-radius: 20px; display: inline-block; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div id="header-content">
-        <h1>GavinTeam 自動引流系統</h1>
-        <p class="subtitle">專屬您的自動化獲客引擎<br>串聯 FB、IG 與 LINE 的全自動漏斗</p>
-    </div>
-
-    <div id="login-section">
-        <button id="google-login-btn" class="btn-google" onclick="signInWithGoogle()">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
-            使用 Google 帳號登入系統
-        </button>
-        <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">GavinTeam System v2.0 • Secured by Supabase</p>
-    </div>
-
-    <div id="app-section" style="display: none;">
-        <div style="text-align: center;"><span id="user-badge"></span></div>
-        
-        <div class="input-group">
-            <label>設定目標流量 (人/月)</label>
-            <input type="number" id="target" placeholder="例如：1000">
-        </div>
-        
-        <div class="input-group">
-            <label>目前廣告/行銷預算 (元)</label>
-            <input type="number" id="budget" placeholder="例如：5000">
-        </div>
-
-        <button class="btn-primary" onclick="calculate()">分析引流成效</button>
-
-        <div id="result-area">
-            <div style="font-size: 14px; color: #4b5563;">依照系統運算，您預計可獲得：</div>
-            <div class="highlight" id="leads-result">-- 名潛在客戶</div>
-            <p style="font-size: 13px; color: #4b5563; margin-top: 15px; line-height: 1.6;">
-                想要將這些流量自動轉化為訂單？<br>
-                立即啟動 <strong>GavinTeam 自動化機器人</strong>
-            </p>
-            <a href="https://line.me/ti/p/您的LineID" target="_blank" class="cta-link">
-                ➤ 點此啟用系統權限
-            </a>
-        </div>
-        
-        <button onclick="signOut()" style="background:none; border:none; color:#9ca3af; font-size:12px; margin-top:25px; cursor:pointer; text-decoration:underline;">登出系統</button>
-    </div>
-</div>
-
 <script>
-    // Supabase 設定
-    const SUPABASE_URL = 'https://dgyizyaqxxmjcqspnlvm.supabase.co'; 
-    const SUPABASE_KEY = 'sb_publishable_s2Vxi5ap4xLgrQNTYSh3qg_TSmPwGTO';
+  // Supabase 設定
+  const SUPABASE_URL = 'https://dgyizyaqxxmjcqspnlvm.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_s2Vxi5ap4xLgrQNTYSh3qg_TSmPwGTO';
 
-    // 初始化
-    let supabase;
+  // ✅ 不要叫 supabase，避免跟 window.supabase 撞名
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // 1. 檢查登入狀態
+  async function checkSession() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      showApp(session.user);
+    } else {
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('app-section').style.display = 'none';
+      document.getElementById('header-content').style.display = 'block';
+    }
+  }
+
+  // ✅ 讓 HTML onclick 找得到
+  window.signInWithGoogle = async function () {
     try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log("Supabase 初始化成功");
+      const cleanRedirect = window.location.origin + window.location.pathname;
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: cleanRedirect,
+          queryParams: { access_type: 'offline', prompt: 'consent' },
+        }
+      });
+      if (error) alert("登入錯誤: " + error.message);
     } catch (err) {
-        console.error("Supabase 初始化失敗:", err);
+      alert("發生未預期的錯誤: " + (err?.message || err));
     }
+  }
 
-    // 1. 檢查登入狀態
-    async function checkSession() {
-        if (!supabase) return;
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            showApp(session.user);
-        } else {
-            document.getElementById('login-section').style.display = 'block';
-            document.getElementById('app-section').style.display = 'none';
-        }
-    }
+  // 3. 顯示主程式
+  function showApp(user) {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('header-content').style.display = 'none';
+    document.getElementById('app-section').style.display = 'block';
+    document.getElementById('user-badge').innerText = `管理員已登入: ${user.email}`;
+    document.getElementById('user-badge').style.display = 'inline-block';
+  }
 
-    // 2. 執行 Google 登入
-    async function signInWithGoogle() {
-        if (!supabase) return alert("系統尚未準備好");
-        try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.href,
-                    queryParams: { access_type: 'offline', prompt: 'consent' },
-                }
-            });
-            if (error) alert("登入錯誤: " + error.message);
-        } catch (err) {
-            alert("發生未預期的錯誤");
-        }
-    }
+  // 4. 計算邏輯
+  window.calculate = function () {
+    const target = parseFloat(document.getElementById('target').value);
+    const budget = parseFloat(document.getElementById('budget').value);
+    if (!target || !budget) return alert("請輸入完整數值");
 
-    // 3. 顯示主程式
-    function showApp(user) {
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('header-content').style.display = 'none';
-        document.getElementById('app-section').style.display = 'block';
-        document.getElementById('user-badge').innerText = `管理員已登入: ${user.email}`;
-        document.getElementById('user-badge').style.display = 'inline-block';
-    }
+    const leads = Math.floor(budget / 35);
+    const resultElement = document.getElementById('leads-result');
 
-    // 4. 計算邏輯
-    function calculate() {
-        const target = parseFloat(document.getElementById('target').value);
-        const budget = parseFloat(document.getElementById('budget').value);
-        if(!target || !budget) return alert("請輸入完整數值");
+    let current = 0;
+    const timer = setInterval(() => {
+      current += Math.ceil(leads / 20);
+      if (current >= leads) {
+        current = leads;
+        clearInterval(timer);
+      }
+      resultElement.innerText = current + " 名潛在客戶";
+    }, 30);
 
-        const leads = Math.floor(budget / 35); 
-        const resultElement = document.getElementById('leads-result');
-        let current = 0;
-        const timer = setInterval(() => {
-            current += Math.ceil(leads / 20);
-            if(current >= leads) {
-                current = leads;
-                clearInterval(timer);
-            }
-            resultElement.innerText = current + " 名潛在客戶";
-        }, 30);
-        document.getElementById('result-area').style.display = 'block';
-    }
+    document.getElementById('result-area').style.display = 'block';
+  }
 
-    // 5. 登出
-    async function signOut() {
-        await supabase.auth.signOut();
-        window.location.reload();
-    }
+  // 5. 登出
+  window.signOut = async function () {
+    await supabaseClient.auth.signOut();
+    window.location.reload();
+  }
 
-    checkSession();
+  // ✅ 監聽登入狀態變化（登入成功會自動觸發）
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) showApp(session.user);
+  });
+
+  // 初始化檢查
+  checkSession();
 </script>
-
-</body>
-</html>
