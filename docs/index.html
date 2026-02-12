@@ -14,8 +14,6 @@
     .btn-primary:hover{background:#000}
     .btn-ghost{border:1px solid #e5e7eb;background:#fff}
     .btn-ghost:hover{background:#f8fafc}
-    .btn-good{background:#10b981;color:#fff}
-    .btn-good:hover{background:#059669}
     .chip{border:1px solid #e5e7eb;border-radius:999px;padding:.35rem .7rem;font-size:12px;font-weight:900}
     .chip-on{background:#0f172a;color:#fff;border-color:#0f172a}
     .badge{border-radius:999px;padding:.2rem .55rem;font-size:11px;font-weight:900}
@@ -38,10 +36,17 @@
  * ✅ 只要改這裡（四個值）
  * ========================= */
 const CONFIG = {
+  // 你的 Gist ID（網址最後那段）
   GIST_ID: "17db93f6b4d4813bcbcfc66cc4ba343f",
+
+  // 你的 GitHub Token（要能讀寫 gist）
   GITHUB_TOKEN: "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",
+
+  // 登入帳密（純前端）
   LOGIN_USER: "gavin",
   LOGIN_PASS: "1234",
+
+  // 檔名固定（不要改）
   FILES: { dev:"worker_dev.json", prod:"worker_prod.json", old:"worker_old.json" }
 };
 </script>
@@ -53,7 +58,7 @@ const CONFIG = {
       <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black">G</div>
       <div>
         <div class="text-lg font-extrabold text-slate-900">Worker 組裝後台</div>
-        <div class="text-xs text-slate-500 mt-0.5">登入後：讀版本 → 改模組 → 組裝 → 貼 Cloudflare</div>
+        <div class="text-xs text-slate-500 mt-0.5">登入後：切換狀態（會自動讀檔）→ 改模組 → 組裝 → 貼 Cloudflare</div>
       </div>
     </div>
 
@@ -72,7 +77,7 @@ const CONFIG = {
     </div>
 
     <div class="mt-6 text-[11px] text-slate-500">
-      版本：開發中 DEV｜已上線 PROD｜舊檔 OLD（雲端存檔於 GitHub Gist）
+      版本分類：開發中 DEV｜已上線 PROD｜舊檔 OLD（自動讀取對應檔案）
     </div>
   </div>
 </div>
@@ -86,9 +91,10 @@ const CONFIG = {
         <div class="flex items-center gap-2">
           <div class="text-xl font-extrabold text-slate-900">Worker 組裝後台</div>
           <span id="slotBadge" class="badge badge-dev">DEV</span>
+          <span id="autoLoadHint" class="text-[11px] text-slate-500">（切換狀態會自動讀取雲端檔案）</span>
         </div>
         <div class="text-xs text-slate-500 mt-1">
-          直覺流程：<span class="font-bold text-slate-700">①讀版本</span> → <span class="font-bold text-slate-700">②改模組</span> → <span class="font-bold text-slate-700">③組裝輸出</span>
+          直覺流程：<span class="font-bold text-slate-700">①切換狀態（自動讀）</span> → <span class="font-bold text-slate-700">②修改模組</span> → <span class="font-bold text-slate-700">③組裝輸出</span>
         </div>
       </div>
 
@@ -105,12 +111,12 @@ const CONFIG = {
     <!-- 左：引導 + 版本操作 -->
     <div class="lg:col-span-3">
       <div class="card shadow-soft p-4">
-        <div class="text-sm font-extrabold text-slate-900">操作引導（照順序做）</div>
+        <div class="text-sm font-extrabold text-slate-900">操作引導（照順序）</div>
 
         <div class="mt-3 space-y-2 text-sm">
           <div class="step">
-            <strong>① 讀取版本</strong>
-            <div class="text-xs text-slate-600 mt-1">先按「從雲端讀」，把 DEV/PROD/OLD 讀進來。</div>
+            <strong>① 切換狀態</strong>
+            <div class="text-xs text-slate-600 mt-1">點上方「開發中／已上線／舊檔」，會自動讀取對應雲端檔案。</div>
           </div>
           <div class="step">
             <strong>② 修改模組</strong>
@@ -124,17 +130,17 @@ const CONFIG = {
 
         <div class="h-px bg-slate-100 my-4"></div>
 
-        <div class="text-sm font-extrabold text-slate-900">版本操作</div>
+        <div class="text-sm font-extrabold text-slate-900">版本資訊</div>
         <div id="metaText" class="text-xs text-slate-500 mt-1">尚未讀取</div>
 
         <div class="mt-3 grid grid-cols-2 gap-2">
-          <button id="loadBtn" class="btn btn-ghost">從雲端讀</button>
-          <button id="saveBtn" class="btn btn-primary">存到雲端</button>
+          <button id="reloadBtn" class="btn btn-ghost">重新讀取</button>
+          <button id="saveBtn" class="btn btn-primary">儲存到雲端</button>
         </div>
 
         <div class="mt-2 grid grid-cols-2 gap-2">
-          <button id="devToProdBtn" class="btn btn-ghost">DEV→PROD</button>
-          <button id="prodToOldBtn" class="btn btn-ghost">PROD→OLD</button>
+          <button id="devToProdBtn" class="btn btn-ghost">開發中 → 上線</button>
+          <button id="prodToOldBtn" class="btn btn-ghost">上線 → 舊檔備份</button>
         </div>
 
         <div class="mt-4">
@@ -152,7 +158,7 @@ const CONFIG = {
         <div class="flex items-center justify-between">
           <div>
             <div class="text-sm font-extrabold text-slate-900">模組清單</div>
-            <div class="text-xs text-slate-500 mt-1">拖曳左側「≡」可排序（排序會影響組裝順序）</div>
+            <div class="text-xs text-slate-500 mt-1">拖曳「≡」可排序（排序會影響組裝順序）</div>
           </div>
           <button id="addModuleBtn" class="btn btn-ghost">＋ 新增模組</button>
         </div>
@@ -313,7 +319,7 @@ let editingId = null;
  * =========== */
 function renderMeta(){
   $("projectName").value = project.name || "";
-  $("metaText").textContent = `目前槽位：${slot.toUpperCase()} · 更新時間：${project.updatedAt || "—"}`;
+  $("metaText").textContent = `目前狀態：${slot.toUpperCase()} · 更新時間：${project.updatedAt || "—"} · 模組數：${project.modules?.length || 0}`;
 }
 function renderModules(){
   const wrap = $("moduleList");
@@ -327,7 +333,7 @@ function renderModules(){
 
     row.innerHTML = `
       <div class="flex items-start gap-2 min-w-0 flex-1">
-        <div class="handle text-slate-400 font-black select-none mt-0.5">≡</div>
+        <div class="handle text-slate-400 font-black select-none mt-0.5" title="拖曳排序">≡</div>
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <input type="checkbox" class="h-4 w-4" ${m.enabled ? "checked" : ""} data-act="toggle">
@@ -358,7 +364,6 @@ function renderModules(){
       row.style.opacity = ".5";
     });
     row.addEventListener("dragend", () => row.style.opacity = "1");
-
     row.addEventListener("dragover", (e) => { e.preventDefault(); });
     row.addEventListener("drop", (e) => {
       e.preventDefault();
@@ -372,7 +377,7 @@ function renderModules(){
       project.modules.splice(toIndex, 0, moved);
 
       renderModules();
-      setMsg("已重新排序（組裝順序已更新）");
+      setMsg("✅ 已重新排序（組裝順序已更新）", true);
     });
 
     wrap.appendChild(row);
@@ -426,7 +431,7 @@ function buildWorker(){
   const header =
 `/**
  * Built by GavinTeam Worker 組裝後台
- * 槽位：${slot.toUpperCase()}
+ * 狀態：${slot.toUpperCase()}
  * 更新時間：${project.updatedAt}
  * 啟用模組：${project.modules.filter(m=>m.enabled).map(m=>m.name).join("、")}
  */`;
@@ -440,7 +445,7 @@ function buildWorker(){
 }
 
 /** ===========
- * 雲端操作
+ * 雲端操作（依狀態）
  * =========== */
 async function loadSlot(){
   const raw = await gistReadFile(slot);
@@ -448,12 +453,15 @@ async function loadSlot(){
   try { obj = JSON.parse(raw || "{}"); } catch { obj = {}; }
   if (!obj.modules) obj = DEFAULT_PROJECT();
   project = obj;
+
   editingId = null;
   $("editingName").textContent = "（未選）";
   $("editor").value = "";
+  $("output").value = ""; // 切狀態時清空輸出，避免誤貼
+
   renderMeta();
   renderModules();
-  setMsg(`✅ 已從雲端讀取 ${slot.toUpperCase()}`, true);
+  setMsg(`✅ 已讀取雲端檔案：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
 }
 
 async function saveSlot(){
@@ -461,7 +469,7 @@ async function saveSlot(){
   project.updatedAt = nowISO();
   await gistWriteFile(slot, JSON.stringify(project, null, 2));
   renderMeta();
-  setMsg(`✅ 已存到雲端 ${slot.toUpperCase()}`, true);
+  setMsg(`✅ 已儲存到雲端：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
 }
 
 async function copySlot(from, to){
@@ -470,12 +478,17 @@ async function copySlot(from, to){
   setMsg(`✅ 已複製：${from.toUpperCase()} → ${to.toUpperCase()}`, true);
 }
 
-function setSlot(next){
+/** ✅ 你要的重點：按狀態就會自動讀檔 */
+async function setSlot(next){
   slot = next;
   slotBadge(slot);
   chips(slot);
   renderMeta();
-  // 不自動讀，避免誤覆蓋；由你按「從雲端讀」
+  try{
+    await loadSlot();
+  }catch(e){
+    setMsg(String(e.message || e), false);
+  }
 }
 
 /** ===========
@@ -497,6 +510,8 @@ $("loginBtn").onclick = () => {
   if (u === CONFIG.LOGIN_USER && p === CONFIG.LOGIN_PASS) {
     localStorage.setItem("WB_LOGIN_OK", "1");
     showApp();
+    // 登入後立刻讀取 DEV
+    setSlot("dev");
   } else {
     setLoginMsg("帳號或密碼錯誤");
   }
@@ -510,21 +525,31 @@ $("logoutBtn").onclick = () => {
 /** ===========
  * 綁定 UI
  * =========== */
-$("slotDev").onclick  = () => setSlot("dev");
-$("slotProd").onclick = () => setSlot("prod");
-$("slotOld").onclick  = () => setSlot("old");
+$("slotDev").onclick  = async () => await setSlot("dev");
+$("slotProd").onclick = async () => await setSlot("prod");
+$("slotOld").onclick  = async () => await setSlot("old");
 
-$("loadBtn").onclick = async () => {
+$("reloadBtn").onclick = async () => {
   try { await loadSlot(); } catch(e){ setMsg(String(e.message||e), false); }
 };
+
 $("saveBtn").onclick = async () => {
   try { await saveSlot(); } catch(e){ setMsg(String(e.message||e), false); }
 };
+
 $("devToProdBtn").onclick = async () => {
-  try { await copySlot("dev","prod"); } catch(e){ setMsg(String(e.message||e), false); }
+  try {
+    await copySlot("dev","prod");
+    // 如果目前正在看 PROD，就順便重讀一次
+    if (slot === "prod") await loadSlot();
+  } catch(e){ setMsg(String(e.message||e), false); }
 };
+
 $("prodToOldBtn").onclick = async () => {
-  try { await copySlot("prod","old"); } catch(e){ setMsg(String(e.message||e), false); }
+  try {
+    await copySlot("prod","old");
+    if (slot === "old") await loadSlot();
+  } catch(e){ setMsg(String(e.message||e), false); }
 };
 
 $("addModuleBtn").onclick = () => {
@@ -572,7 +597,7 @@ $("buildBtn").onclick = () => {
 $("copyBtn").onclick = async () => {
   try{
     await navigator.clipboard.writeText($("output").value || "");
-    setMsg("已複製輸出內容");
+    setMsg("已複製輸出內容", true);
   }catch{
     setMsg("複製失敗：請先按組裝", false);
   }
@@ -585,10 +610,10 @@ $("downloadBtn").onclick = () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "worker.js";
+  a.download = `worker_${slot}.js`;
   a.click();
   URL.revokeObjectURL(url);
-  setMsg("已下載 worker.js");
+  setMsg("已下載 worker.js", true);
 };
 
 /** ===========
@@ -598,13 +623,20 @@ $("downloadBtn").onclick = () => {
   if (!CONFIG.GITHUB_TOKEN || CONFIG.GITHUB_TOKEN.includes("PASTE_YOUR_TOKEN_HERE")) {
     console.warn("請在 CONFIG.GITHUB_TOKEN 填入你的 token");
   }
+
   slotBadge(slot);
   chips(slot);
   renderMeta();
   renderModules();
 
   const ok = localStorage.getItem("WB_LOGIN_OK") === "1";
-  ok ? showApp() : showLogin();
+  if (ok){
+    showApp();
+    // 直接載入 DEV
+    setSlot("dev");
+  } else {
+    showLogin();
+  }
 })();
 </script>
 
