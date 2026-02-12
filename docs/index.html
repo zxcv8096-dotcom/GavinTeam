@@ -3,59 +3,57 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Worker Builder｜GavinTeam</title>
+  <title>Worker 組裝後台｜GavinTeam</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body{font-family:system-ui,"Microsoft JhengHei";}
     textarea, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
     .shadow-soft{box-shadow:0 10px 30px rgba(2,6,23,.06);}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:14px;padding:.55rem .9rem;font-weight:900;font-size:12px;user-select:none}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:14px;padding:.6rem .95rem;font-weight:900;font-size:12px;user-select:none}
     .btn-primary{background:#0f172a;color:#fff}
     .btn-primary:hover{background:#000}
     .btn-ghost{border:1px solid #e5e7eb;background:#fff}
     .btn-ghost:hover{background:#f8fafc}
+    .btn-good{background:#10b981;color:#fff}
+    .btn-good:hover{background:#059669}
     .chip{border:1px solid #e5e7eb;border-radius:999px;padding:.35rem .7rem;font-size:12px;font-weight:900}
     .chip-on{background:#0f172a;color:#fff;border-color:#0f172a}
     .badge{border-radius:999px;padding:.2rem .55rem;font-size:11px;font-weight:900}
     .badge-dev{background:#e0f2fe;color:#075985}
     .badge-prod{background:#dcfce7;color:#166534}
     .badge-old{background:#fef3c7;color:#92400e}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:24px}
+    .step{border:1px solid #e5e7eb;border-radius:18px;padding:12px}
+    .step strong{color:#0f172a}
+    .row{border:1px solid #e5e7eb;border-radius:18px;padding:10px}
+    .row:hover{background:#f8fafc}
+    .handle{cursor:grab}
+    .handle:active{cursor:grabbing}
   </style>
 </head>
 
 <body class="min-h-screen bg-slate-50">
 <script>
 /** =========================
- *  ✅ 只要改這裡（3 個地方）
- *  ========================= */
+ * ✅ 只要改這裡（四個值）
+ * ========================= */
 const CONFIG = {
-  // 1) 你的 Gist ID（網址最後那段）
-  GIST_ID: "17db93f6b4d4813bcbcfc66cc4ba343f",
-
-  // 2) 你的 GitHub Token（只要能讀寫 gist）
-  GITHUB_TOKEN: "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",
-
-  // 3) 登入帳密（純前端）
+  GIST_ID: "17db93f6b4d4813bcbcfcc66cc4ba343f",
+  GITHUB_TOKEN: "PASTE_YOUR_TOKEN_HERE",
   LOGIN_USER: "gavin",
-  LOGIN_PASS: "lily820620",
-
-  // 檔名固定（不要改）
-  FILES: {
-    dev:  "worker_dev.json",
-    prod: "worker_prod.json",
-    old:  "worker_old.json",
-  }
+  LOGIN_PASS: "1234",
+  FILES: { dev:"worker_dev.json", prod:"worker_prod.json", old:"worker_old.json" }
 };
 </script>
 
-<!-- ===== Login Screen ===== -->
+<!-- ===== 登入畫面 ===== -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center p-6">
-  <div class="w-full max-w-md bg-white border rounded-3xl p-6 shadow-soft">
+  <div class="w-full max-w-md card shadow-soft p-6">
     <div class="flex items-center gap-3">
       <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black">G</div>
       <div>
-        <div class="text-lg font-extrabold text-slate-900">Worker Builder</div>
-        <div class="text-xs text-slate-500 mt-0.5">登入後編輯與組裝 worker.js</div>
+        <div class="text-lg font-extrabold text-slate-900">Worker 組裝後台</div>
+        <div class="text-xs text-slate-500 mt-0.5">登入後：讀版本 → 改模組 → 組裝 → 貼 Cloudflare</div>
       </div>
     </div>
 
@@ -74,23 +72,23 @@ const CONFIG = {
     </div>
 
     <div class="mt-6 text-[11px] text-slate-500">
-      版本：DEV / PROD / OLD（雲端存檔於 GitHub Gist）
+      版本：開發中 DEV｜已上線 PROD｜舊檔 OLD（雲端存檔於 GitHub Gist）
     </div>
   </div>
 </div>
 
-<!-- ===== App ===== -->
+<!-- ===== 主畫面 ===== -->
 <div id="app" class="hidden">
-  <!-- Top Bar -->
+  <!-- Top bar -->
   <div class="sticky top-0 z-20 bg-slate-50/80 backdrop-blur border-b">
     <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
       <div class="min-w-0">
         <div class="flex items-center gap-2">
-          <div class="text-xl font-extrabold text-slate-900">Worker Builder</div>
+          <div class="text-xl font-extrabold text-slate-900">Worker 組裝後台</div>
           <span id="slotBadge" class="badge badge-dev">DEV</span>
         </div>
         <div class="text-xs text-slate-500 mt-1">
-          流程：<span class="font-bold text-slate-700">讀</span> → 改 → <span class="font-bold text-slate-700">存</span> → DEV→PROD → 組裝 → 貼 Cloudflare
+          直覺流程：<span class="font-bold text-slate-700">①讀版本</span> → <span class="font-bold text-slate-700">②改模組</span> → <span class="font-bold text-slate-700">③組裝輸出</span>
         </div>
       </div>
 
@@ -103,25 +101,40 @@ const CONFIG = {
     </div>
   </div>
 
-  <!-- Main -->
   <div class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-    <!-- Left: Actions + Module List -->
-    <div class="lg:col-span-4">
-      <div class="bg-white border rounded-3xl p-4 shadow-soft">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm font-extrabold text-slate-900">版本</div>
-            <div id="metaText" class="text-xs text-slate-500 mt-1">尚未讀取</div>
+    <!-- 左：引導 + 版本操作 -->
+    <div class="lg:col-span-3">
+      <div class="card shadow-soft p-4">
+        <div class="text-sm font-extrabold text-slate-900">操作引導（照順序做）</div>
+
+        <div class="mt-3 space-y-2 text-sm">
+          <div class="step">
+            <strong>① 讀取版本</strong>
+            <div class="text-xs text-slate-600 mt-1">先按「從雲端讀」，把 DEV/PROD/OLD 讀進來。</div>
           </div>
-          <div class="flex gap-2">
-            <button id="loadBtn" class="btn btn-ghost">從雲端讀</button>
-            <button id="saveBtn" class="btn btn-primary">存到雲端</button>
+          <div class="step">
+            <strong>② 修改模組</strong>
+            <div class="text-xs text-slate-600 mt-1">點模組名稱編輯；可拖曳排序；可啟用/停用。</div>
+          </div>
+          <div class="step">
+            <strong>③ 組裝輸出</strong>
+            <div class="text-xs text-slate-600 mt-1">按「組裝」產生 worker.js → 複製貼到 Cloudflare。</div>
           </div>
         </div>
 
-        <div class="mt-3 flex gap-2">
-          <button id="devToProdBtn" class="btn btn-ghost flex-1">DEV → PROD</button>
-          <button id="prodToOldBtn" class="btn btn-ghost flex-1">PROD → OLD</button>
+        <div class="h-px bg-slate-100 my-4"></div>
+
+        <div class="text-sm font-extrabold text-slate-900">版本操作</div>
+        <div id="metaText" class="text-xs text-slate-500 mt-1">尚未讀取</div>
+
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button id="loadBtn" class="btn btn-ghost">從雲端讀</button>
+          <button id="saveBtn" class="btn btn-primary">存到雲端</button>
+        </div>
+
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <button id="devToProdBtn" class="btn btn-ghost">DEV→PROD</button>
+          <button id="prodToOldBtn" class="btn btn-ghost">PROD→OLD</button>
         </div>
 
         <div class="mt-4">
@@ -129,23 +142,31 @@ const CONFIG = {
           <input id="projectName" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm" placeholder="例如：LINE 工具 Worker">
         </div>
 
-        <div class="mt-4 flex items-center justify-between">
-          <div class="text-sm font-extrabold text-slate-900">模組</div>
-          <button id="addModuleBtn" class="btn btn-ghost">＋ 新增</button>
-        </div>
-
-        <div id="moduleList" class="mt-3 space-y-2"></div>
-
         <div id="msg" class="mt-3 text-xs"></div>
       </div>
     </div>
 
-    <!-- Middle: Editor -->
+    <!-- 中：模組清單 -->
     <div class="lg:col-span-4">
-      <div class="bg-white border rounded-3xl p-4 shadow-soft h-full">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
+      <div class="card shadow-soft p-4">
+        <div class="flex items-center justify-between">
           <div>
-            <div class="text-sm font-extrabold text-slate-900">編輯</div>
+            <div class="text-sm font-extrabold text-slate-900">模組清單</div>
+            <div class="text-xs text-slate-500 mt-1">拖曳左側「≡」可排序（排序會影響組裝順序）</div>
+          </div>
+          <button id="addModuleBtn" class="btn btn-ghost">＋ 新增模組</button>
+        </div>
+
+        <div id="moduleList" class="mt-3 space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- 右：編輯 + 輸出 -->
+    <div class="lg:col-span-5">
+      <div class="card shadow-soft p-4">
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <div class="text-sm font-extrabold text-slate-900">模組編輯</div>
             <div class="text-xs text-slate-500 mt-1">正在編輯：<span id="editingName" class="font-bold text-slate-700">（未選）</span></div>
           </div>
           <div class="flex gap-2">
@@ -154,18 +175,15 @@ const CONFIG = {
           </div>
         </div>
 
-        <textarea id="editor" class="mt-3 w-full h-[560px] px-3 py-3 border rounded-2xl text-sm"
-          placeholder="// 點左邊模組名稱開始編輯"></textarea>
-      </div>
-    </div>
+        <textarea id="editor" class="mt-3 w-full h-[280px] px-3 py-3 border rounded-2xl text-sm"
+          placeholder="點左邊模組名稱開始編輯"></textarea>
 
-    <!-- Right: Build / Output -->
-    <div class="lg:col-span-4">
-      <div class="bg-white border rounded-3xl p-4 shadow-soft h-full">
+        <div class="h-px bg-slate-100 my-4"></div>
+
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <div>
-            <div class="text-sm font-extrabold text-slate-900">輸出</div>
-            <div class="text-xs text-slate-500 mt-1">一鍵組裝成完整 worker.js</div>
+            <div class="text-sm font-extrabold text-slate-900">輸出：worker.js</div>
+            <div class="text-xs text-slate-500 mt-1">按組裝 → 複製 → 貼到 Cloudflare Worker</div>
           </div>
           <div class="flex gap-2">
             <button id="buildBtn" class="btn btn-primary">組裝</button>
@@ -174,7 +192,7 @@ const CONFIG = {
           </div>
         </div>
 
-        <textarea id="output" class="mt-3 w-full h-[560px] px-3 py-3 border rounded-2xl text-sm mono"
+        <textarea id="output" class="mt-3 w-full h-[270px] px-3 py-3 border rounded-2xl text-sm mono"
           placeholder="// 按「組裝」產生完整 worker.js"></textarea>
       </div>
     </div>
@@ -183,48 +201,47 @@ const CONFIG = {
 
 <script>
 /** ===========
- * Utilities
+ * 工具 / UI
  * =========== */
 const $ = (id) => document.getElementById(id);
-
 function setMsg(text, ok=true){
   $("msg").className = "mt-3 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
   $("msg").textContent = text;
 }
-
 function slotBadge(slot){
   const badge = $("slotBadge");
   badge.className = "badge " + (slot==="prod" ? "badge-prod" : slot==="old" ? "badge-old" : "badge-dev");
   badge.textContent = slot.toUpperCase();
 }
-
 function chips(slot){
   $("slotDev").classList.toggle("chip-on", slot==="dev");
   $("slotProd").classList.toggle("chip-on", slot==="prod");
   $("slotOld").classList.toggle("chip-on", slot==="old");
 }
-
 function nowISO(){ return new Date().toISOString(); }
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, (c)=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
 
 /** ===========
  * Gist API
  * =========== */
-async function gistGet(gistId){
-  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+async function gistGet(){
+  const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
     headers: { "Authorization": `Bearer ${CONFIG.GITHUB_TOKEN}` }
   });
   if (!res.ok) throw new Error("讀取 Gist 失敗：" + res.status);
   return await res.json();
 }
-
 async function gistReadFile(slot){
-  const gist = await gistGet(CONFIG.GIST_ID);
+  const gist = await gistGet();
   const filename = CONFIG.FILES[slot];
   const file = gist.files?.[filename];
   if (!file) throw new Error("Gist 找不到檔案：" + filename);
   return file.content || "{}";
 }
-
 async function gistWriteFile(slot, content){
   const filename = CONFIG.FILES[slot];
   const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
@@ -240,13 +257,13 @@ async function gistWriteFile(slot, content){
 }
 
 /** ===========
- * App State
+ * 狀態
  * =========== */
 const DEFAULT_PROJECT = () => ({
-  name: "My Worker",
+  name: "我的 Worker",
   updatedAt: nowISO(),
   modules: [
-    { id: crypto.randomUUID(), name: "00_bootstrap", enabled: true, code:
+    { id: crypto.randomUUID(), name: "00_共用工具", enabled: true, code:
 `// 共用工具
 function json(data, status=200, headers={}) {
   return new Response(JSON.stringify(data), {
@@ -262,20 +279,21 @@ function text(s, status=200, headers={}) {
 }
 function notFound(){ return new Response("Not Found", { status: 404 }); }
 `},
-    { id: crypto.randomUUID(), name: "10_routes", enabled: true, code:
-`// 路由
+    { id: crypto.randomUUID(), name: "10_路由", enabled: true, code:
+`// 路由（你只要一直加 if）
 async function router(request, env, ctx) {
   const url = new URL(request.url);
 
   if (url.pathname === "/") return text("OK");
 
+  // 範例：
   // if (url.pathname.startsWith("/api/quiz")) return handleQuiz(request, env, ctx);
   // if (url.pathname === "/webhook") return handleWebhook(request, env, ctx);
 
   return notFound();
 }
 `},
-    { id: crypto.randomUUID(), name: "99_entry", enabled: true, code:
+    { id: crypto.randomUUID(), name: "99_入口", enabled: true, code:
 `export default {
   async fetch(request, env, ctx) {
     try { return await router(request, env, ctx); }
@@ -291,58 +309,74 @@ let project = DEFAULT_PROJECT();
 let editingId = null;
 
 /** ===========
- * Render
+ * 渲染
  * =========== */
 function renderMeta(){
   $("projectName").value = project.name || "";
-  $("metaText").textContent = `Slot: ${slot.toUpperCase()} · Updated: ${project.updatedAt || "—"}`;
+  $("metaText").textContent = `目前槽位：${slot.toUpperCase()} · 更新時間：${project.updatedAt || "—"}`;
 }
-
 function renderModules(){
   const wrap = $("moduleList");
   wrap.innerHTML = "";
 
   project.modules.forEach((m, idx) => {
     const row = document.createElement("div");
-    row.className = "border rounded-2xl p-3 flex items-start justify-between gap-2";
+    row.className = "row flex items-start justify-between gap-2";
+    row.draggable = true;
+    row.dataset.id = m.id;
 
     row.innerHTML = `
-      <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-2">
-          <input type="checkbox" class="h-4 w-4 mt-0.5" ${m.enabled ? "checked" : ""} data-act="toggle">
-          <button class="text-left font-extrabold text-sm text-slate-900 truncate hover:underline" data-act="edit">${escapeHtml(m.name)}</button>
+      <div class="flex items-start gap-2 min-w-0 flex-1">
+        <div class="handle text-slate-400 font-black select-none mt-0.5">≡</div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" class="h-4 w-4" ${m.enabled ? "checked" : ""} data-act="toggle">
+            <button class="text-left font-extrabold text-sm text-slate-900 truncate hover:underline" data-act="edit">${escapeHtml(m.name)}</button>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1 mono truncate">${m.enabled ? "啟用中" : "停用"} · ${m.id}</div>
         </div>
-        <div class="text-[11px] text-slate-500 mt-1 mono truncate">${m.enabled ? "enabled" : "disabled"} · ${m.id}</div>
       </div>
       <div class="flex gap-1 flex-shrink-0">
-        <button class="btn btn-ghost px-2 py-1" data-act="up">↑</button>
-        <button class="btn btn-ghost px-2 py-1" data-act="down">↓</button>
-        <button class="btn btn-ghost px-2 py-1" data-act="rename">✎</button>
-        <button class="btn btn-ghost px-2 py-1" data-act="dup">⎘</button>
-        <button class="btn btn-ghost px-2 py-1" data-act="del">×</button>
+        <button class="btn btn-ghost px-2 py-1" data-act="rename">改名</button>
+        <button class="btn btn-ghost px-2 py-1" data-act="dup">複製</button>
+        <button class="btn btn-ghost px-2 py-1" data-act="del">刪除</button>
       </div>
     `;
-
-    row.querySelectorAll("[data-act]").forEach(el => {
-      el.addEventListener("click", (e) => {
-        const act = el.getAttribute("data-act");
-        onModuleAction(act, m.id);
-      });
-    });
 
     row.querySelector('[data-act="toggle"]').addEventListener("change", (e)=>{
       m.enabled = e.target.checked;
       setMsg(`模組「${m.name}」已${m.enabled ? "啟用" : "停用"}`);
     });
 
+    row.querySelectorAll("[data-act]").forEach(el => {
+      el.addEventListener("click", () => onModuleAction(el.getAttribute("data-act"), m.id));
+    });
+
+    // 拖曳排序
+    row.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", m.id);
+      row.style.opacity = ".5";
+    });
+    row.addEventListener("dragend", () => row.style.opacity = "1");
+
+    row.addEventListener("dragover", (e) => { e.preventDefault(); });
+    row.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const fromId = e.dataTransfer.getData("text/plain");
+      const toId = m.id;
+      if (!fromId || fromId === toId) return;
+
+      const fromIndex = project.modules.findIndex(x=>x.id===fromId);
+      const toIndex = project.modules.findIndex(x=>x.id===toId);
+      const [moved] = project.modules.splice(fromIndex, 1);
+      project.modules.splice(toIndex, 0, moved);
+
+      renderModules();
+      setMsg("已重新排序（組裝順序已更新）");
+    });
+
     wrap.appendChild(row);
   });
-}
-
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g, (c)=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
 }
 
 function onModuleAction(act, id){
@@ -356,16 +390,8 @@ function onModuleAction(act, id){
     $("editor").value = m.code || "";
     return;
   }
-  if (act === "up" && i>0){
-    [project.modules[i-1], project.modules[i]] = [project.modules[i], project.modules[i-1]];
-    renderModules(); return;
-  }
-  if (act === "down" && i<project.modules.length-1){
-    [project.modules[i+1], project.modules[i]] = [project.modules[i], project.modules[i+1]];
-    renderModules(); return;
-  }
   if (act === "rename"){
-    const nn = prompt("新模組名稱（建議 00_,10_ 排序）", m.name);
+    const nn = prompt("新模組名稱（建議用 00_,10_ 排序）", m.name);
     if (!nn) return;
     m.name = nn.trim();
     if (editingId === id) $("editingName").textContent = m.name;
@@ -374,8 +400,8 @@ function onModuleAction(act, id){
   if (act === "dup"){
     const copy = structuredClone(m);
     copy.id = crypto.randomUUID();
-    copy.name = m.name + "_copy";
-    project.modules.push(copy);
+    copy.name = m.name + "_複製";
+    project.modules.splice(i+1, 0, copy);
     renderModules(); return;
   }
   if (act === "del"){
@@ -391,7 +417,7 @@ function onModuleAction(act, id){
 }
 
 /** ===========
- * Build
+ * 組裝
  * =========== */
 function buildWorker(){
   project.name = $("projectName").value.trim() || project.name;
@@ -399,28 +425,27 @@ function buildWorker(){
 
   const header =
 `/**
- * Built by GavinTeam Worker Builder
- * Slot: ${slot.toUpperCase()}
- * Updated: ${project.updatedAt}
- * Enabled: ${project.modules.filter(m=>m.enabled).map(m=>m.name).join(", ")}
+ * Built by GavinTeam Worker 組裝後台
+ * 槽位：${slot.toUpperCase()}
+ * 更新時間：${project.updatedAt}
+ * 啟用模組：${project.modules.filter(m=>m.enabled).map(m=>m.name).join("、")}
  */`;
 
   const body = project.modules
     .filter(m=>m.enabled)
-    .map(m=>`\n\n// ===== MODULE: ${m.name} =====\n${m.code || ""}\n`)
+    .map(m=>`\n\n// ===== 模組：${m.name} =====\n${m.code || ""}\n`)
     .join("");
 
   return `${header}\n${body}\n`;
 }
 
 /** ===========
- * Actions
+ * 雲端操作
  * =========== */
 async function loadSlot(){
   const raw = await gistReadFile(slot);
   let obj;
   try { obj = JSON.parse(raw || "{}"); } catch { obj = {}; }
-
   if (!obj.modules) obj = DEFAULT_PROJECT();
   project = obj;
   editingId = null;
@@ -454,18 +479,16 @@ function setSlot(next){
 }
 
 /** ===========
- * Login
+ * 登入
  * =========== */
 function showApp(){
   $("loginScreen").classList.add("hidden");
   $("app").classList.remove("hidden");
 }
-
 function showLogin(){
   $("app").classList.add("hidden");
   $("loginScreen").classList.remove("hidden");
 }
-
 function setLoginMsg(t){ $("loginMsg").textContent = t || ""; }
 
 $("loginBtn").onclick = () => {
@@ -485,7 +508,7 @@ $("logoutBtn").onclick = () => {
 };
 
 /** ===========
- * Wire UI
+ * 綁定 UI
  * =========== */
 $("slotDev").onclick  = () => setSlot("dev");
 $("slotProd").onclick = () => setSlot("prod");
@@ -494,21 +517,18 @@ $("slotOld").onclick  = () => setSlot("old");
 $("loadBtn").onclick = async () => {
   try { await loadSlot(); } catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("saveBtn").onclick = async () => {
   try { await saveSlot(); } catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("devToProdBtn").onclick = async () => {
   try { await copySlot("dev","prod"); } catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("prodToOldBtn").onclick = async () => {
   try { await copySlot("prod","old"); } catch(e){ setMsg(String(e.message||e), false); }
 };
 
 $("addModuleBtn").onclick = () => {
-  const name = prompt("模組名稱（建議 30_xxx）", "30_new_module");
+  const name = prompt("模組名稱（建議 30_功能名稱）", "30_新功能");
   if (!name) return;
   project.modules.push({ id: crypto.randomUUID(), name: name.trim(), enabled: true, code: `// ${name.trim()}\n\n` });
   renderModules();
@@ -572,10 +592,9 @@ $("downloadBtn").onclick = () => {
 };
 
 /** ===========
- * Init
+ * 初始化
  * =========== */
 (function init(){
-  // 基本檢查：token 有沒有填
   if (!CONFIG.GITHUB_TOKEN || CONFIG.GITHUB_TOKEN.includes("PASTE_YOUR_TOKEN_HERE")) {
     console.warn("請在 CONFIG.GITHUB_TOKEN 填入你的 token");
   }
