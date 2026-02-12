@@ -1,1 +1,588 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Worker 組裝台（雲端存檔：GitHub Gist）</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body{font-family:system-ui,"Microsoft JhengHei";}
+    textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .tab{padding:.5rem .75rem;border-radius:999px;border:1px solid #e5e7eb;font-weight:900;font-size:12px}
+    .tab.active{background:#0f172a;color:#fff;border-color:#0f172a}
+    .btn{padding:.55rem .75rem;border-radius:12px;font-weight:900;font-size:12px;border:1px solid #e5e7eb;background:#fff}
+    .btn:hover{background:#f8fafc}
+    .btnP{background:#2563eb;color:#fff;border-color:#2563eb}
+    .btnP:hover{background:#1d4ed8}
+    .btnG{background:#10b981;color:#fff;border-color:#10b981}
+    .btnG:hover{background:#059669}
+    .btnD{background:#0f172a;color:#fff;border-color:#0f172a}
+    .btnD:hover{background:#000}
+    code{background:#f1f5f9;padding:.1rem .35rem;border-radius:.4rem}
+  </style>
+</head>
 
+<body class="min-h-screen bg-slate-50">
+  <div class="max-w-7xl mx-auto p-5">
+    <div class="flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-extrabold text-slate-900">Worker 組裝台（雲端存檔）</h1>
+        <p class="text-sm text-slate-600 mt-1">
+          雲端讀寫：GitHub Gist（DEV/PROD/OLD）→ 一鍵組裝完整 <span class="mono">worker.js</span> → 貼到 Cloudflare
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <button id="slotProd" class="tab">已上線</button>
+        <button id="slotDev" class="tab active">開發中</button>
+        <button id="slotOld" class="tab">舊檔</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-5">
+      <!-- 左：雲端存檔 + 模組清單 -->
+      <div class="lg:col-span-4 bg-white border rounded-2xl p-4 shadow-sm">
+        <div class="bg-slate-50 border rounded-2xl p-3">
+          <div class="text-sm font-extrabold text-slate-900">雲端存檔（GitHub Gist）</div>
+          <div class="text-xs text-slate-600 mt-1">
+            先建 3 個檔：<code>worker_dev.json</code> <code>worker_prod.json</code> <code>worker_old.json</code>
+          </div>
+
+          <label class="text-xs font-bold text-slate-600 mt-2 block">GIST_ID</label>
+          <input id="gistId" class="mt-1 w-full px-3 py-2 border rounded-xl text-sm"
+                 placeholder="例如：abcdef1234567890..." />
+
+          <label class="text-xs font-bold text-slate-600 mt-2 block">GitHub Token（只存在你瀏覽器）</label>
+          <input id="ghToken" type="password" class="mt-1 w-full px-3 py-2 border rounded-xl text-sm"
+                 placeholder="Fine-grained token（只開 Gists 讀寫）" />
+
+          <div class="flex gap-2 mt-2">
+            <button id="cloudLoad" class="btn btnP flex-1">從雲端讀</button>
+            <button id="cloudSave" class="btn btnG flex-1">存到雲端</button>
+          </div>
+
+          <div class="flex gap-2 mt-2">
+            <button id="cloudCopyToProd" class="btn flex-1">DEV→PROD</button>
+            <button id="cloudBackupToOld" class="btn flex-1">PROD→OLD</button>
+          </div>
+
+          <div class="text-[11px] text-slate-500 mt-2">
+            Token 不會上傳到 GitHub，只會留在你的瀏覽器 localStorage。換電腦就重新貼一次即可。
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-sm font-extrabold text-slate-900">專案名稱</div>
+          <input id="projectName" class="mt-2 w-full px-3 py-2 border rounded-xl text-sm" placeholder="例如：LINE 工具 Worker" />
+        </div>
+
+        <div class="mt-4 flex items-center justify-between gap-2">
+          <div>
+            <div class="text-sm font-extrabold text-slate-900">模組</div>
+            <div class="text-xs text-slate-600 mt-1">拆成多段 JS，最後組成一支 Worker</div>
+          </div>
+          <button id="addModule" class="btn btnP">＋ 新增模組</button>
+        </div>
+
+        <div class="mt-3">
+          <div class="text-xs font-bold text-slate-600">模組列表</div>
+          <div id="moduleList" class="mt-2 space-y-2"></div>
+        </div>
+
+        <div id="msg" class="mt-3 text-xs"></div>
+      </div>
+
+      <!-- 中：模組編輯器 -->
+      <div class="lg:col-span-4 bg-white border rounded-2xl p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <div class="text-sm font-extrabold text-slate-900">模組編輯</div>
+            <div class="text-xs text-slate-600 mt-1">正在編輯：<span id="editingName" class="font-bold">（未選）</span></div>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button id="insertTemplate" class="btn">插入範本</button>
+            <button id="normalize" class="btn">簡易整理</button>
+          </div>
+        </div>
+
+        <textarea id="moduleEditor" class="mt-3 w-full h-[585px] px-3 py-3 border rounded-2xl text-sm"
+          placeholder="// 選一個模組開始編輯"></textarea>
+
+        <div class="mt-3 text-xs text-slate-500">
+          你可以把問卷/LINE/webhook/後台 API 都拆成不同模組，最後一鍵組裝成完整 worker.js。
+        </div>
+      </div>
+
+      <!-- 右：輸出 worker.js -->
+      <div class="lg:col-span-4 bg-white border rounded-2xl p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <div class="text-sm font-extrabold text-slate-900">輸出：worker.js</div>
+            <div class="text-xs text-slate-600 mt-1">組裝後直接貼到 Cloudflare Worker 編輯器</div>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button id="build" class="btn btnD">組裝</button>
+            <button id="copyOut" class="btn">複製</button>
+            <button id="downloadOut" class="btn btnG">下載 .js</button>
+          </div>
+        </div>
+
+        <textarea id="output" class="mt-3 w-full h-[585px] px-3 py-3 border rounded-2xl text-sm"
+          placeholder="// 按「組裝」產生完整 worker.js"></textarea>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // =========================
+  // 1) 雲端存檔：GitHub Gist API
+  // =========================
+  const CLOUD = {
+    gistIdKey: "WB_GIST_ID",
+    tokenKey: "WB_GH_TOKEN",
+    fileOfSlot: (slot) => slot === "prod" ? "worker_prod.json" : slot === "old" ? "worker_old.json" : "worker_dev.json"
+  };
+
+  function getCloudConfig() {
+    const gistId = (document.getElementById("gistId").value || localStorage.getItem(CLOUD.gistIdKey) || "").trim();
+    const token  = (document.getElementById("ghToken").value || localStorage.getItem(CLOUD.tokenKey) || "").trim();
+    if (!gistId) throw new Error("請填 GIST_ID（Gist 網址最後那段）");
+    if (!token) throw new Error("請填 GitHub Token（只開 Gists 讀寫）");
+    localStorage.setItem(CLOUD.gistIdKey, gistId);
+    localStorage.setItem(CLOUD.tokenKey, token);
+    return { gistId, token };
+  }
+
+  async function gistReadFile({ gistId, token, filename }) {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(`讀取 Gist 失敗：HTTP ${res.status}`);
+    const data = await res.json();
+    const file = data.files?.[filename];
+    if (!file) throw new Error(`Gist 找不到檔案：${filename}`);
+    return file.content; // string
+  }
+
+  async function gistWriteFile({ gistId, token, filename, content }) {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        files: { [filename]: { content } }
+      })
+    });
+    if (!res.ok) throw new Error(`寫入 Gist 失敗：HTTP ${res.status}`);
+    return await res.json();
+  }
+
+  // =========================
+  // 2) Worker 組裝台（DEV/PROD/OLD）
+  // =========================
+  const $ = (id) => document.getElementById(id);
+  const moduleList = $("moduleList");
+  const editor = $("moduleEditor");
+  const output = $("output");
+
+  const DEFAULT_PROJECT = () => ({
+    name: "My Worker",
+    modules: [
+      {
+        id: crypto.randomUUID(),
+        name: "00_bootstrap",
+        enabled: true,
+        code:
+`// ✅ 共用工具（建議都放這裡）
+function json(data, status=200, headers={}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type":"application/json; charset=utf-8", ...headers },
+  });
+}
+function text(s, status=200, headers={}) {
+  return new Response(String(s), {
+    status,
+    headers: { "content-type":"text/plain; charset=utf-8", ...headers },
+  });
+}
+function notFound() {
+  return new Response("Not Found", { status: 404 });
+}
+`
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "10_routes",
+        enabled: true,
+        code:
+`// ✅ 路由分流（你只要一直加 if / handler）
+async function router(request, env, ctx) {
+  const url = new URL(request.url);
+
+  // Example:
+  if (url.pathname === "/") return text("OK");
+
+  // Example API:
+  if (url.pathname.startsWith("/api/quiz")) {
+    return handleQuiz(request, env, ctx);
+  }
+
+  // Example webhook:
+  if (url.pathname === "/webhook") {
+    return handleLineWebhook(request, env, ctx);
+  }
+
+  return notFound();
+}
+`
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "20_handlers",
+        enabled: true,
+        code:
+`// ✅ 你的功能都寫成 handler
+async function handleQuiz(request, env, ctx) {
+  return json({ ok: true, from: "handleQuiz" });
+}
+async function handleLineWebhook(request, env, ctx) {
+  return json({ ok: true, from: "handleLineWebhook" });
+}
+`
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "99_entry",
+        enabled: true,
+        code:
+`// ✅ Worker 入口
+export default {
+  async fetch(request, env, ctx) {
+    try {
+      return await router(request, env, ctx);
+    } catch (err) {
+      return json({ error: "server_error", message: String(err?.message || err) }, 500);
+    }
+  }
+};
+`
+      },
+    ],
+    updatedAt: new Date().toISOString(),
+  });
+
+  let slot = "dev";
+  let project = DEFAULT_PROJECT();
+  let editingId = null;
+
+  function label(s){
+    return s === "prod" ? "已上線" : s === "dev" ? "開發中" : "舊檔";
+  }
+
+  function setMsg(text, ok=true){
+    $("msg").className = "mt-3 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
+    $("msg").textContent = text;
+  }
+
+  function renderTabs(){
+    $("slotProd").classList.toggle("active", slot==="prod");
+    $("slotDev").classList.toggle("active", slot==="dev");
+    $("slotOld").classList.toggle("active", slot==="old");
+  }
+
+  function escapeHtml(s){
+    return String(s||"").replace(/[&<>"']/g, (c)=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+
+  function renderList(){
+    moduleList.innerHTML = "";
+    project.modules.forEach((m, idx)=>{
+      const row = document.createElement("div");
+      row.className = "border rounded-2xl p-3 flex items-center justify-between gap-2";
+      row.innerHTML = `
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" ${m.enabled ? "checked" : ""} data-act="toggle" class="h-4 w-4">
+            <button data-act="edit" class="text-left font-extrabold text-sm text-slate-900 truncate hover:underline">${escapeHtml(m.name)}</button>
+          </div>
+          <div class="text-xs text-slate-500 mt-1 mono truncate">id: ${m.id}</div>
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+          <button class="btn" data-act="up">↑</button>
+          <button class="btn" data-act="down">↓</button>
+          <button class="btn" data-act="rename">改名</button>
+          <button class="btn" data-act="dup">複製</button>
+          <button class="btn" data-act="del">刪</button>
+        </div>
+      `;
+
+      row.querySelector('[data-act="toggle"]').addEventListener("change", (e)=>{
+        m.enabled = e.target.checked;
+        setMsg(`模組「${m.name}」已${m.enabled ? "啟用" : "停用"}`);
+      });
+
+      row.querySelectorAll("[data-act]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const act = btn.getAttribute("data-act");
+          handleListAction(act, m.id);
+        });
+      });
+
+      moduleList.appendChild(row);
+    });
+  }
+
+  function handleListAction(act, id){
+    const i = project.modules.findIndex(x=>x.id===id);
+    if (i<0) return;
+    const m = project.modules[i];
+
+    if (act === "edit"){
+      editingId = id;
+      $("editingName").textContent = m.name;
+      editor.value = m.code || "";
+      setMsg(`正在編輯：${m.name}`);
+      return;
+    }
+    if (act === "up" && i>0){
+      [project.modules[i-1], project.modules[i]] = [project.modules[i], project.modules[i-1]];
+      renderList(); setMsg("已上移"); return;
+    }
+    if (act === "down" && i<project.modules.length-1){
+      [project.modules[i+1], project.modules[i]] = [project.modules[i], project.modules[i+1]];
+      renderList(); setMsg("已下移"); return;
+    }
+    if (act === "rename"){
+      const nn = prompt("新模組名稱（建議 00_, 10_ 排序）", m.name || "");
+      if (!nn) return;
+      m.name = nn.trim();
+      if (editingId === id) $("editingName").textContent = m.name;
+      renderList(); setMsg("已改名"); return;
+    }
+    if (act === "dup"){
+      const copy = structuredClone(m);
+      copy.id = crypto.randomUUID();
+      copy.name = (m.name || "module") + "_copy";
+      project.modules.push(copy);
+      renderList(); setMsg("已複製模組"); return;
+    }
+    if (act === "del"){
+      if (!confirm(`確定刪除模組「${m.name}」？`)) return;
+      project.modules.splice(i,1);
+      if (editingId === id){
+        editingId = null;
+        editor.value = "";
+        $("editingName").textContent = "（未選）";
+      }
+      renderList(); setMsg("已刪除"); return;
+    }
+  }
+
+  editor.addEventListener("input", ()=>{
+    if (!editingId) return;
+    const m = project.modules.find(x=>x.id===editingId);
+    if (m) m.code = editor.value;
+  });
+
+  function buildWorker(){
+    project.name = $("projectName").value.trim() || project.name;
+    project.updatedAt = new Date().toISOString();
+
+    const header =
+`/**
+ * Built by Worker 組裝台（GitHub Pages + Gist）
+ * Project: ${project.name || "Untitled"}
+ * Slot: ${label(slot)}
+ * Updated: ${project.updatedAt}
+ * Enabled: ${project.modules.filter(m=>m.enabled).map(m=>m.name).join(", ")}
+ */`;
+
+    const body = project.modules
+      .filter(m=>m.enabled)
+      .map(m=>`\n\n// ===== MODULE: ${m.name} =====\n${m.code || ""}\n`)
+      .join("");
+
+    return `${header}\n${body}\n`;
+  }
+
+  function setSlot(s){
+    slot = s;
+    editingId = null;
+    editor.value = "";
+    $("editingName").textContent = "（未選）";
+    renderTabs();
+    renderList();
+    $("projectName").value = project.name || "";
+    setMsg(`已切換到「${label(slot)}」`);
+  }
+
+  // =========================
+  // 3) UI Actions
+  // =========================
+  $("addModule").onclick = ()=>{
+    const name = prompt("模組名稱（建議 30_xxx）", "30_new_module");
+    if (!name) return;
+    project.modules.push({
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      enabled: true,
+      code: `// ${name.trim()}\n\n`
+    });
+    renderList();
+    setMsg("已新增模組");
+  };
+
+  $("insertTemplate").onclick = ()=>{
+    if (!editingId) return setMsg("請先選一個模組", false);
+    const tpl =
+`// ✅ 範本：新增一個 handler
+// router() 範例：
+// if (url.pathname === "/api/example") return handleExample(request, env, ctx);
+
+async function handleExample(request, env, ctx) {
+  return json({ ok: true, from: "handleExample" });
+}
+`;
+    editor.value = (editor.value || "") + "\n\n" + tpl;
+    const m = project.modules.find(x=>x.id===editingId);
+    if (m) m.code = editor.value;
+    setMsg("已插入範本");
+  };
+
+  $("normalize").onclick = ()=>{
+    if (!editingId) return setMsg("請先選一個模組", false);
+    editor.value = editor.value.replace(/\t/g, "  ").replace(/\r\n/g, "\n");
+    const m = project.modules.find(x=>x.id===editingId);
+    if (m) m.code = editor.value;
+    setMsg("已做簡易整理");
+  };
+
+  $("build").onclick = ()=>{
+    output.value = buildWorker();
+    setMsg("✅ 已組裝完成：可直接貼到 Cloudflare Worker", true);
+  };
+
+  $("copyOut").onclick = async ()=>{
+    try{
+      await navigator.clipboard.writeText(output.value || "");
+      setMsg("已複製輸出內容");
+    }catch{
+      setMsg("複製失敗：請確認瀏覽器權限或先組裝", false);
+    }
+  };
+
+  $("downloadOut").onclick = ()=>{
+    const content = output.value || "";
+    if (!content.trim()){
+      setMsg("請先按「組裝」", false); return;
+    }
+    const blob = new Blob([content], { type: "text/javascript;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "worker.js";
+    a.click();
+    URL.revokeObjectURL(url);
+    setMsg("已下載 worker.js");
+  };
+
+  // Slot buttons
+  $("slotProd").onclick = ()=>setSlot("prod");
+  $("slotDev").onclick = ()=>setSlot("dev");
+  $("slotOld").onclick = ()=>setSlot("old");
+
+  // =========================
+  // 4) 雲端讀寫（Gist）
+  // =========================
+  function loadCloudInputsFromLocal(){
+    const gid = localStorage.getItem(CLOUD.gistIdKey) || "";
+    const tok = localStorage.getItem(CLOUD.tokenKey) || "";
+    $("gistId").value = gid;
+    $("ghToken").value = tok;
+  }
+
+  $("cloudLoad").onclick = async ()=>{
+    try{
+      const { gistId, token } = getCloudConfig();
+      const filename = CLOUD.fileOfSlot(slot);
+      const raw = await gistReadFile({ gistId, token, filename });
+      const obj = JSON.parse(raw || "{}");
+
+      // 若雲端是空的，就用預設
+      if (!obj.modules) {
+        project = DEFAULT_PROJECT();
+        project.name = obj.name || project.name;
+        setMsg(`雲端檔案 ${filename} 內容不完整，已載入預設模板`, false);
+      } else {
+        project = obj;
+        setMsg(`✅ 已從雲端讀取：${filename}`, true);
+      }
+
+      // 更新 UI
+      $("projectName").value = project.name || "";
+      editingId = null;
+      editor.value = "";
+      $("editingName").textContent = "（未選）";
+      renderList();
+    }catch(e){
+      setMsg(String(e.message || e), false);
+    }
+  };
+
+  $("cloudSave").onclick = async ()=>{
+    try{
+      const { gistId, token } = getCloudConfig();
+      const filename = CLOUD.fileOfSlot(slot);
+      project.name = $("projectName").value.trim() || project.name;
+      project.updatedAt = new Date().toISOString();
+
+      await gistWriteFile({ gistId, token, filename, content: JSON.stringify(project, null, 2) });
+      setMsg(`✅ 已存到雲端：${filename}`, true);
+    }catch(e){
+      setMsg(String(e.message || e), false);
+    }
+  };
+
+  $("cloudCopyToProd").onclick = async ()=>{
+    try{
+      const { gistId, token } = getCloudConfig();
+      // 讀 dev
+      const devRaw = await gistReadFile({ gistId, token, filename: "worker_dev.json" });
+      // 直接寫到 prod
+      await gistWriteFile({ gistId, token, filename: "worker_prod.json", content: devRaw });
+      setMsg("✅ 已雲端複製：DEV → PROD", true);
+    }catch(e){
+      setMsg(String(e.message || e), false);
+    }
+  };
+
+  $("cloudBackupToOld").onclick = async ()=>{
+    try{
+      const { gistId, token } = getCloudConfig();
+      // 讀 prod
+      const prodRaw = await gistReadFile({ gistId, token, filename: "worker_prod.json" });
+      // 寫 old
+      await gistWriteFile({ gistId, token, filename: "worker_old.json", content: prodRaw });
+      setMsg("✅ 已雲端備份：PROD → OLD", true);
+    }catch(e){
+      setMsg(String(e.message || e), false);
+    }
+  };
+
+  // =========================
+  // Init
+  // =========================
+  loadCloudInputsFromLocal();
+  renderTabs();
+  renderList();
+  $("projectName").value = project.name || "";
+  setMsg("完成：先填 GIST_ID / Token → 從雲端讀（DEV）開始開發");
+</script>
+</body>
+</html>
