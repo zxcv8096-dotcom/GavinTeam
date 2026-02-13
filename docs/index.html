@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Worker 上線總控台｜GavinTeam（DEV草稿→PROD整合→OLD備份）</title>
+  <title>Worker 組裝後台｜GavinTeam（DEV 可編輯｜PROD/OLD 只讀成品）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root{
@@ -11,6 +11,7 @@
       --muted:#64748b;
       --bd:rgba(15,23,42,.10);
       --glass: rgba(255,255,255,.72);
+      --glass2: rgba(255,255,255,.60);
       --shadow: 0 24px 70px rgba(2,6,23,.10);
       --shadow2: 0 10px 30px rgba(2,6,23,.07);
       --ring: 0 0 0 4px rgba(99,102,241,.18);
@@ -26,6 +27,7 @@
       -webkit-text-size-adjust:100%;
     }
     textarea, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .shadow-soft{box-shadow:var(--shadow2);}
     .card{
       background:var(--glass);
       backdrop-filter: blur(12px);
@@ -42,26 +44,16 @@
     .btn{
       display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
       border-radius:16px;padding:.62rem .95rem;font-weight:900;font-size:12px;user-select:none;
-      transition: transform .08s ease, filter .2s ease, background .2s ease, border-color .2s ease;
+      transition: transform .08s ease, filter .2s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
     }
     .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn[disabled]{ opacity:.45; cursor:not-allowed; }
     .btn-primary{
       color:#fff;
       background: linear-gradient(135deg, #0f172a, #111827, #0b1220);
       box-shadow: 0 12px 22px rgba(2,6,23,.18);
     }
     .btn-primary:hover{ filter: brightness(1.06); }
-    .btn-emerald{
-      color:#fff;
-      background: linear-gradient(135deg, #059669, #10b981);
-      box-shadow: 0 12px 22px rgba(16,185,129,.18);
-    }
-    .btn-emerald:hover{ filter: brightness(1.06); }
-    .btn-rose{
-      color:#fff;
-      background: linear-gradient(135deg, #e11d48, #fb7185);
-      box-shadow: 0 12px 22px rgba(225,29,72,.18);
-    }
     .btn-ghost{
       border:1px solid rgba(15,23,42,.12);
       background: rgba(255,255,255,.75);
@@ -134,6 +126,7 @@
     .toast .dot{
       margin-top: 4px;
       width:10px;height:10px;border-radius:999px;
+      box-shadow: 0 0 0 5px rgba(16,185,129,.12);
       flex: 0 0 auto;
     }
     .toast.ok .dot{ background:#10b981; box-shadow: 0 0 0 5px rgba(16,185,129,.12); }
@@ -150,14 +143,8 @@
       font-size: 11px;
       color: rgba(100,116,139,1);
     }
-    @keyframes toastIn{
-      from{ opacity:0; transform: translateY(12px); }
-      to{ opacity:1; transform: translateY(0); }
-    }
-    @keyframes toastOut{
-      from{ opacity:1; transform: translateY(0); }
-      to{ opacity:0; transform: translateY(10px); }
-    }
+    @keyframes toastIn{ from{ opacity:0; transform: translateY(12px); } to{ opacity:1; transform: translateY(0); } }
+    @keyframes toastOut{ from{ opacity:1; transform: translateY(0); } to{ opacity:0; transform: translateY(10px); } }
 
     .top-glow{
       position: fixed;
@@ -189,16 +176,13 @@ const CONFIG = {
   LOGIN_USER: "gavin",
   LOGIN_PASS: "1234",
 
-  /**
-   * ✅ 三區檔案（重要！）
-   * DEV：存「模組/設定」（JSON）
-   * PROD：存「整合後 worker.js 成品」（純文字）
-   * OLD：存「上一版 worker.js 備份」（純文字）
-   */
+  // ✅ 檔名規則（很重要）
+  // DEV：用 JSON（可編輯模組）
+  // PROD/OLD：用 JS（只讀成品）
   FILES: {
-    dev:  "worker_dev.json",
-    prod: "worker_prod.js",
-    old:  "worker_old.js"
+    dev_json: "worker_dev.json",
+    prod_js: "worker_prod.js",
+    old_js:  "worker_old.js"
   }
 };
 </script>
@@ -210,10 +194,10 @@ const CONFIG = {
   <div class="w-full max-w-md card p-6">
     <div class="card-inner p-4">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black" style="box-shadow:var(--shadow2)">G</div>
+        <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black shadow-soft">G</div>
         <div class="min-w-0">
-          <div class="text-lg font-extrabold text-slate-900">Worker 上線總控台</div>
-          <div class="text-xs text-slate-500 mt-0.5">DEV 草稿 → 一鍵整合成 PROD → 自動備份到 OLD</div>
+          <div class="text-lg font-extrabold text-slate-900">Worker 組裝後台</div>
+          <div class="text-xs text-slate-500 mt-0.5">DEV 可編輯｜PROD/OLD 只讀成品（不會混在一起）</div>
         </div>
       </div>
 
@@ -232,9 +216,9 @@ const CONFIG = {
       </div>
 
       <div class="mt-5 text-[11px] text-slate-500 leading-5">
-        ✅ 你只要做兩件事：<br>
-        1) 在 DEV 改好 → 按「發布到上線」<br>
-        2) 去 Cloudflare 貼上 PROD 的 worker.js
+        DEV：你正在開發、可改模組<br/>
+        PROD：真正上線成品 worker.js<br/>
+        OLD：上線前自動備份（防止開發做壞）
       </div>
     </div>
   </div>
@@ -247,38 +231,39 @@ const CONFIG = {
     <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
-          <div class="text-xl font-extrabold text-slate-900">Worker 上線總控台</div>
+          <div class="text-xl font-extrabold text-slate-900">Worker 組裝後台</div>
           <span id="slotBadge" class="badge badge-dev">DEV</span>
           <span id="tokenStatePill" class="pill">Token：未載入</span>
+          <span id="modePill" class="pill">模式：DEV 可編輯</span>
         </div>
         <div class="text-xs text-slate-600 mt-1">
-          DEV 只存草稿（JSON）｜PROD/OLD 是「成品 worker.js」｜發布會自動備份。
+          ✅ DEV：可編輯模組並「發布到上線」｜✅ PROD/OLD：只讀成品（不會出現 DEV 內容）
         </div>
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
-        <button id="slotDev"  class="chip chip-on">開發中（草稿）</button>
-        <button id="slotProd" class="chip">已上線（成品）</button>
-        <button id="slotOld"  class="chip">舊檔（備份）</button>
+        <button id="slotDev"  class="chip chip-on">開發中</button>
+        <button id="slotProd" class="chip">已上線</button>
+        <button id="slotOld"  class="chip">舊檔</button>
         <button id="logoutBtn" class="btn btn-ghost">登出</button>
       </div>
     </div>
   </div>
 
   <div class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-    <!-- 左：控制台 -->
-    <div class="lg:col-span-3">
+    <!-- 左：控制台（只在 DEV 顯示） -->
+    <div class="lg:col-span-3" id="panelLeft">
       <div class="card p-4">
         <div class="card-inner p-4">
-          <div class="text-sm font-extrabold text-slate-900">控制台</div>
+          <div class="text-sm font-extrabold text-slate-900">控制台（DEV 才會出現）</div>
 
-          <!-- Token -->
+          <!-- Token 外掛 -->
           <div class="mt-3">
-            <div class="text-sm font-extrabold text-slate-900">GitHub Token</div>
-            <div class="text-xs text-slate-500 mt-1">順序：URL(#token/?token) → 本機儲存 → 手動貼上</div>
+            <div class="text-sm font-extrabold text-slate-900">Token 外掛</div>
+            <div class="text-xs text-slate-500 mt-1">取用順序：URL(#token / ?token) → 本機儲存 → 手動貼上</div>
 
             <div class="mt-3">
-              <label class="text-xs font-bold text-slate-600">Token（只存在這台瀏覽器）</label>
+              <label class="text-xs font-bold text-slate-600">GitHub Token（只存在這台瀏覽器）</label>
               <input id="tokenInput" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70"
                      placeholder="貼上 ghp_... 或 github_pat_...">
               <div class="mt-2 grid grid-cols-2 gap-2">
@@ -295,45 +280,39 @@ const CONFIG = {
           <div id="metaText" class="text-xs text-slate-600 mt-1">尚未讀取</div>
 
           <div class="mt-3">
-            <label class="text-xs font-bold text-slate-600">專案名稱（DEV 用）</label>
-            <input id="projectName" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="例如：LINE 工具總 Worker">
+            <label class="text-xs font-bold text-slate-600">專案名稱</label>
+            <input id="projectName" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="例如：LINE 工具 Worker">
           </div>
 
           <div class="mt-3 grid grid-cols-2 gap-2">
-            <button id="reloadBtn" class="btn btn-ghost">重新讀取</button>
+            <button id="reloadBtn" class="btn btn-ghost">重新讀取 DEV</button>
             <button id="saveBtn" class="btn btn-primary">儲存 DEV</button>
           </div>
 
           <div class="mt-2 grid grid-cols-1 gap-2">
-            <button id="publishBtn" class="btn btn-emerald w-full">✅ 發布到上線（備份OLD＋產生PROD）</button>
-            <button id="rollbackBtn" class="btn btn-rose w-full">↩ 回復舊檔（OLD → PROD）</button>
+            <button id="publishBtn" class="btn btn-primary">🚀 發布到上線（PROD）</button>
+            <div class="text-[11px] text-slate-500 leading-5">
+              發布流程：<br/>
+              ① 自動把目前 PROD 備份到 OLD<br/>
+              ② 用 DEV 組裝成品 worker.js → 寫入 PROD
+            </div>
           </div>
 
-          <div class="mt-4 rounded-2xl border border-slate-200 bg-white/60 p-3 text-xs text-slate-700 leading-5">
-            <div class="font-extrabold text-slate-900">你只要記住：</div>
-            <div>• DEV：改到一半也沒關係（不影響客戶）</div>
-            <div>• 發布：才會產生「整合後 worker.js」進 PROD</div>
-            <div>• OLD：自動備份上一版 PROD，可救命</div>
-          </div>
+          <div id="msg" class="hidden"></div>
         </div>
       </div>
     </div>
 
-    <!-- 中：模組清單（只在 DEV 可用） -->
-    <div class="lg:col-span-4">
+    <!-- 中：模組清單（只在 DEV 顯示） -->
+    <div class="lg:col-span-4" id="panelMiddle">
       <div class="card p-4">
         <div class="card-inner p-4">
           <div class="flex items-center justify-between">
             <div>
-              <div class="text-sm font-extrabold text-slate-900">模組清單（DEV）</div>
-              <div class="text-xs text-slate-600 mt-1">只在 DEV 編輯；PROD/OLD 是成品，不改這裡</div>
+              <div class="text-sm font-extrabold text-slate-900">模組清單（DEV 才會出現）</div>
+              <div class="text-xs text-slate-600 mt-1">拖曳「≡」可排序（排序會影響組裝順序）</div>
             </div>
             <button id="addModuleBtn" class="btn btn-ghost">＋ 新增模組</button>
-          </div>
-
-          <div id="devOnlyHint" class="mt-3 hidden rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 leading-5">
-            你現在在 <b>PROD/OLD</b>：這裡不能改模組。<br>
-            要修改請切回 <b>DEV</b>，改好再按「發布到上線」。
           </div>
 
           <div id="moduleList" class="mt-3 space-y-2"></div>
@@ -341,13 +320,13 @@ const CONFIG = {
       </div>
     </div>
 
-    <!-- 右：編輯 + 輸出 -->
+    <!-- 右：編輯 + 輸出（PROD/OLD 也會留著「輸出」區） -->
     <div class="lg:col-span-5">
       <div class="card p-4">
         <div class="card-inner p-4">
           <div class="flex items-start justify-between gap-2 flex-wrap">
             <div>
-              <div class="text-sm font-extrabold text-slate-900">模組編輯（DEV）</div>
+              <div class="text-sm font-extrabold text-slate-900">模組編輯（只有 DEV 能用）</div>
               <div class="text-xs text-slate-600 mt-1">正在編輯：<span id="editingName" class="font-bold text-slate-800">（未選）</span></div>
             </div>
             <div class="flex gap-2">
@@ -356,25 +335,25 @@ const CONFIG = {
             </div>
           </div>
 
-          <textarea id="editor" class="mt-3 w-full h-[260px] px-3 py-3 border rounded-2xl text-sm bg-white/70"
-            placeholder="在 DEV 點左邊模組名稱開始編輯"></textarea>
+          <textarea id="editor" class="mt-3 w-full h-[280px] px-3 py-3 border rounded-2xl text-sm bg-white/70"
+            placeholder="點左邊模組名稱開始編輯"></textarea>
 
           <div class="h-px bg-white/50 my-4"></div>
 
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <div>
-              <div class="text-sm font-extrabold text-slate-900">輸出：worker.js（PROD/OLD 成品）</div>
-              <div class="text-xs text-slate-600 mt-1">DEV 按「組裝」只是預覽；真正上線請按「發布到上線」</div>
+              <div class="text-sm font-extrabold text-slate-900">輸出：worker.js（PROD/OLD 只讀成品）</div>
+              <div class="text-xs text-slate-600 mt-1" id="outputHint">DEV：按組裝 → 複製 → 貼 Cloudflare Worker</div>
             </div>
             <div class="flex gap-2">
-              <button id="buildBtn" class="btn btn-primary">組裝（預覽）</button>
+              <button id="buildBtn" class="btn btn-primary">組裝</button>
               <button id="copyBtn" class="btn btn-ghost">複製</button>
               <button id="downloadBtn" class="btn btn-ghost">下載</button>
             </div>
           </div>
 
-          <textarea id="output" class="mt-3 w-full h-[290px] px-3 py-3 border rounded-2xl text-sm mono bg-white/70"
-            placeholder="// DEV：按「組裝」預覽\n// PROD/OLD：讀取到的就是成品 worker.js"></textarea>
+          <textarea id="output" class="mt-3 w-full h-[270px] px-3 py-3 border rounded-2xl text-sm mono bg-white/70"
+            placeholder="// DEV：按「組裝」產生完整 worker.js\n// PROD/OLD：這裡只會顯示成品 worker.js（只讀）"></textarea>
         </div>
       </div>
     </div>
@@ -390,6 +369,8 @@ function escapeHtml(s){
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[c]));
 }
+
+/** Toast */
 let toastTimer = 0;
 function toast(text, ok=true, sub=""){
   const wrap = $("toastWrap");
@@ -414,7 +395,7 @@ function setMsg(text, ok=true){ toast(text, ok); }
 function tokenMsg(text, ok=true){
   $("tokenMsg").className = "mt-2 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
   $("tokenMsg").textContent = text || "";
-  if (text) toast(text, ok, "Token");
+  if (text) toast(text, ok, "Token 外掛");
 }
 
 function slotBadge(slot){
@@ -429,13 +410,16 @@ function chips(slot){
 }
 
 /** =====================================================
- * ✅ Token：URL / localStorage / 手動輸入
+ * ✅ 外掛 Token：URL / localStorage / 手動輸入
  * ===================================================== */
 const TOKEN_STORE_KEY = "WB_GH_TOKEN";
 let runtimeToken = "";
 
 function cleanToken(input){
-  return String(input||"").trim().replace(/\s+/g,"").replace(/[^\x20-\x7E]/g,"");
+  return String(input||"")
+    .trim()
+    .replace(/\s+/g,"")
+    .replace(/[^\x20-\x7E]/g,"");
 }
 function getTokenFromUrl(){
   try{
@@ -483,10 +467,6 @@ function setTokenPill(){
     pill.textContent = "Token：未載入";
   }
 }
-
-/** =====================================================
- * ✅ GitHub Auth headers
- * ===================================================== */
 function authHeaders(){
   const t = resolveToken();
   const h = {
@@ -531,13 +511,13 @@ async function gistWriteFile(filename, content){
   const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
     method: "PATCH",
     headers: { ...resHeaders, "Content-Type": "application/json" },
-    body: JSON.stringify({ files: { [filename]: { content: String(content ?? "") } } })
+    body: JSON.stringify({ files: { [filename]: { content } } })
   });
   if (!res.ok) throw new Error(await readGitHubError(res));
   return await res.json();
 }
 
-/** =========== DEV Project Model（只有 DEV 用） =========== */
+/** =========== 狀態 / DEV 專案（JSON 模組） =========== */
 const DEFAULT_PROJECT = () => ({
   name: "我的 Worker",
   updatedAt: nowISO(),
@@ -583,48 +563,63 @@ async function router(request, env, ctx) {
   ]
 });
 
-let slot = "dev";              // dev / prod / old（視圖）
+let slot = "dev";          // dev | prod | old
 let project = DEFAULT_PROJECT();
 let editingId = null;
 
-/** =========== UI：DEV vs PROD/OLD 模式切換 =========== */
-function setDevModeUI(isDev){
-  $("addModuleBtn").disabled = !isDev;
-  $("addModuleBtn").className = "btn " + (isDev ? "btn-ghost" : "btn-ghost opacity-50 cursor-not-allowed");
-  $("templateBtn").disabled = !isDev;
-  $("formatBtn").disabled = !isDev;
-  $("editor").disabled = !isDev;
-  $("editor").classList.toggle("opacity-60", !isDev);
-  $("devOnlyHint").classList.toggle("hidden", isDev);
+/** =========== UI：DEV / PROD/OLD 模式切換（你要的規則） =========== */
+function setDevModeUI(){
+  $("panelLeft").classList.remove("hidden");
+  $("panelMiddle").classList.remove("hidden");
+
+  $("modePill").textContent = "模式：DEV 可編輯";
+  $("outputHint").textContent = "DEV：按組裝 → 複製 → 貼 Cloudflare Worker";
+
+  $("templateBtn").disabled = false;
+  $("formatBtn").disabled = false;
+  $("buildBtn").disabled = false;
+  $("saveBtn").disabled = false;
+  $("reloadBtn").disabled = false;
+  $("addModuleBtn").disabled = false;
+  $("publishBtn").disabled = false;
+
+  $("editor").readOnly = false;
+  $("editor").placeholder = "點左邊模組名稱開始編輯";
+}
+function setProdOldModeUI(which){
+  $("panelLeft").classList.add("hidden");
+  $("panelMiddle").classList.add("hidden");
+
+  $("modePill").textContent = which === "prod" ? "模式：PROD 只讀成品" : "模式：OLD 只讀備份";
+  $("outputHint").textContent = which === "prod"
+    ? "PROD：這裡只顯示上線成品 worker.js（只讀）"
+    : "OLD：這裡只顯示備份 worker.js（只讀）";
+
+  // 禁止 DEV 編輯器殘留
+  editingId = null;
+  $("editingName").textContent = which === "prod" ? "（上線成品）" : "（舊檔備份）";
+  $("editor").value = "";
+  $("editor").readOnly = true;
+  $("editor").placeholder = "成品模式：不能在這裡編輯（請切回 DEV）";
+
+  // 禁止 DEV 功能按鈕
+  $("templateBtn").disabled = true;
+  $("formatBtn").disabled = true;
+  $("buildBtn").disabled = true;
+  $("saveBtn").disabled = true;
+  $("reloadBtn").disabled = true;
+  $("addModuleBtn").disabled = true;
+  $("publishBtn").disabled = true;
 }
 
-/** =========== 渲染 =========== */
-function renderMeta(extra=""){
-  const base = `狀態：${slot.toUpperCase()} · `;
-  if (slot === "dev"){
-    $("projectName").value = project.name || "";
-    $("metaText").textContent = base + `更新：${project.updatedAt || "—"} · 模組：${project.modules?.length || 0}` + (extra ? ` · ${extra}` : "");
-  }else{
-    $("metaText").textContent = base + (extra || "（成品 worker.js）");
-  }
+/** =========== 渲染 DEV =========== */
+function renderMeta(){
+  $("projectName").value = project.name || "";
+  $("metaText").textContent = `狀態：DEV · 更新：${project.updatedAt || "—"} · 模組：${project.modules?.length || 0}`;
 }
 function renderModules(){
   const wrap = $("moduleList");
   wrap.innerHTML = "";
-
-  if (slot !== "dev"){
-    // 在 PROD/OLD 就顯示一個簡單提示
-    const d = document.createElement("div");
-    d.className = "rounded-2xl border border-dashed border-slate-300 bg-white/60 p-4 text-slate-600 text-sm";
-    d.innerHTML = `
-      <div class="font-extrabold text-slate-900">這裡是成品模式（${slot.toUpperCase()}）</div>
-      <div class="mt-1 text-xs text-slate-600 leading-5">
-        不能改模組。要改請回 DEV 改好，再按「發布到上線」。
-      </div>
-    `;
-    wrap.appendChild(d);
-    return;
-  }
 
   project.modules.forEach((m) => {
     const row = document.createElement("div");
@@ -652,7 +647,7 @@ function renderModules(){
 
     row.querySelector('[data-act="toggle"]').addEventListener("change", (e)=>{
       m.enabled = e.target.checked;
-      setMsg(`模組「${m.name}」已${m.enabled ? "啟用" : "停用"}`);
+      setMsg(`模組「${m.name}」已${m.enabled ? "啟用" : "停用"}`, true);
     });
 
     row.querySelectorAll("[data-act]").forEach(el => {
@@ -683,10 +678,7 @@ function renderModules(){
     wrap.appendChild(row);
   });
 }
-
 function onModuleAction(act, id){
-  if (slot !== "dev") return;
-
   const i = project.modules.findIndex(x=>x.id===id);
   if (i<0) return;
   const m = project.modules[i];
@@ -727,18 +719,20 @@ function onModuleAction(act, id){
   }
 }
 
-/** =========== 組裝（預覽用） =========== */
-function buildWorkerFromProject(pj){
-  const enabledNames = (pj.modules || []).filter(m=>m.enabled).map(m=>m.name);
+/** =========== DEV 組裝 =========== */
+function buildWorkerFromDev(){
+  project.name = $("projectName").value.trim() || project.name;
+  project.updatedAt = nowISO();
+
   const header =
 `/**
- * Built by GavinTeam 上線總控台
- * 來源：DEV 草稿整合
- * 產生時間：${nowISO()}
- * 啟用模組：${enabledNames.join("、")}
+ * Built by GavinTeam Worker 組裝後台
+ * 來源：DEV（模組組裝）
+ * 更新時間：${project.updatedAt}
+ * 啟用模組：${project.modules.filter(m=>m.enabled).map(m=>m.name).join("、")}
  */`;
 
-  const body = (pj.modules || [])
+  const body = project.modules
     .filter(m=>m.enabled)
     .map(m=>`\n\n// ===== 模組：${m.name} =====\n${m.code || ""}\n`)
     .join("");
@@ -746,16 +740,12 @@ function buildWorkerFromProject(pj){
   return `${header}\n${body}\n`;
 }
 
-/** =========== 三區檔案行為（核心） =========== */
-/**
- * DEV：讀/寫 JSON
- * PROD/OLD：讀/寫 純文字 worker.js
- */
-async function loadDev(){
-  const raw = await gistReadFile(CONFIG.FILES.dev);
+/** =========== 讀/寫：DEV JSON、PROD/OLD JS（成品） =========== */
+async function loadDevProject(){
+  const raw = await gistReadFile(CONFIG.FILES.dev_json);
   let obj;
-  try { obj = JSON.parse(raw || "{}"); } catch { obj = {}; }
-  if (!obj.modules) obj = DEFAULT_PROJECT();
+  try { obj = JSON.parse(raw || "{}"); } catch { obj = null; }
+  if (!obj || !Array.isArray(obj.modules)) obj = DEFAULT_PROJECT();
   project = obj;
 
   editingId = null;
@@ -763,97 +753,66 @@ async function loadDev(){
   $("editor").value = "";
   $("output").value = "";
 
-  renderModules();
   renderMeta();
-  setMsg(`✅ 已讀取 DEV：${CONFIG.FILES.dev}`, true);
+  renderModules();
+  setMsg(`✅ 已讀取 DEV：${CONFIG.FILES.dev_json}`, true);
 }
-
-async function saveDev(){
+async function saveDevProject(){
   project.name = $("projectName").value.trim() || project.name;
   project.updatedAt = nowISO();
-  await gistWriteFile(CONFIG.FILES.dev, JSON.stringify(project, null, 2));
-  renderMeta("已儲存DEV");
-  setMsg(`✅ 已儲存 DEV：${CONFIG.FILES.dev}`, true);
+  await gistWriteFile(CONFIG.FILES.dev_json, JSON.stringify(project, null, 2));
+  renderMeta();
+  setMsg(`✅ 已儲存 DEV：${CONFIG.FILES.dev_json}`, true);
 }
-
-async function loadArtifact(which){ // prod / old
-  const filename = which === "prod" ? CONFIG.FILES.prod : CONFIG.FILES.old;
+async function loadArtifact(which){ // prod | old
+  const filename = which === "prod" ? CONFIG.FILES.prod_js : CONFIG.FILES.old_js;
   const raw = await gistReadFile(filename);
-  $("output").value = raw || "";
-  $("editingName").textContent = "（成品模式）";
-  $("editor").value = "";
-  renderModules();
-  renderMeta(`已讀取：${filename}`);
-  setMsg(`✅ 已讀取 ${which.toUpperCase()}：${filename}`, true);
+  $("output").value = (raw || "").trim() ? raw : `// ${filename} 目前是空的`;
+  setMsg(`✅ 已讀取 ${which.toUpperCase()} 成品：${filename}`, true);
+}
+async function writeArtifact(which, js){ // prod | old
+  const filename = which === "prod" ? CONFIG.FILES.prod_js : CONFIG.FILES.old_js;
+  await gistWriteFile(filename, js);
 }
 
-async function publishToProd(){
-  // 1) 先確保 DEV 已存（避免你改了忘存）
-  await saveDev();
+/** =========== 發布：DEV →（備份 PROD 到 OLD）→ 寫入 PROD =========== */
+async function publishDevToProd(){
+  if (!confirm("確定要發布到上線（PROD）？\n\n會先備份目前 PROD 到 OLD，再把 DEV 組裝成品寫入 PROD。")) return;
 
-  // 2) 先讀目前 PROD，備份到 OLD（保命）
-  let currentProd = "";
-  try{
-    currentProd = await gistReadFile(CONFIG.FILES.prod);
-  }catch(e){
-    // 第一次可能還沒有 prod 檔，允許繼續
-    currentProd = "";
-  }
-  await gistWriteFile(CONFIG.FILES.old, String(currentProd || ""));
-  setMsg("✅ 已備份：PROD → OLD", true);
+  // 1) 先組裝
+  const built = buildWorkerFromDev();
+  if (!built.trim()) throw new Error("DEV 組裝結果是空的，無法發布");
 
-  // 3) 用 DEV 整合出成品 worker.js，寫入 PROD
-  const built = buildWorkerFromProject(project);
-  await gistWriteFile(CONFIG.FILES.prod, built);
+  // 2) 讀目前 PROD → 寫入 OLD（備份）
+  let prodRaw = "";
+  try { prodRaw = await gistReadFile(CONFIG.FILES.prod_js); } catch { prodRaw = ""; }
+  await writeArtifact("old", prodRaw || `// 備份時間：${nowISO()}\n// 原本 PROD 是空的\n`);
 
-  // 4) 切到 PROD 檢視
-  slot = "prod";
-  slotBadge(slot);
-  chips(slot);
-  setDevModeUI(false);
-  $("projectName").disabled = true;
-  $("projectName").classList.add("opacity-60");
-  await loadArtifact("prod");
+  // 3) 寫入新 PROD
+  await writeArtifact("prod", built);
 
-  toast("✅ 發布完成：已產生上線成品（PROD）", true, "你現在可以複製貼到 Cloudflare");
+  // 4) UI 顯示一下
+  $("output").value = built;
+  setMsg("🚀 發布完成：已備份到 OLD，並更新 PROD 成品", true);
 }
 
-async function rollbackOldToProd(){
-  const oldText = await gistReadFile(CONFIG.FILES.old);
-  await gistWriteFile(CONFIG.FILES.prod, String(oldText || ""));
-  setMsg("✅ 已回復：OLD → PROD", true);
-
-  slot = "prod";
-  slotBadge(slot);
-  chips(slot);
-  setDevModeUI(false);
-  $("projectName").disabled = true;
-  $("projectName").classList.add("opacity-60");
-  await loadArtifact("prod");
-  toast("↩ 已回復上線版（PROD）", true, "請把 PROD 內容貼回 Cloudflare");
-}
-
-/** =========== slot 切換（視圖） =========== */
+/** =========== 切換狀態（核心：不讓 DEV 內容出現在 PROD/OLD） =========== */
 async function setSlot(next){
   slot = next;
   slotBadge(slot);
   chips(slot);
+  setTokenPill();
 
-  if (slot === "dev"){
-    setDevModeUI(true);
-    $("projectName").disabled = false;
-    $("projectName").classList.remove("opacity-60");
-    await loadDev();
-  }else if (slot === "prod"){
-    setDevModeUI(false);
-    $("projectName").disabled = true;
-    $("projectName").classList.add("opacity-60");
-    await loadArtifact("prod");
-  }else{
-    setDevModeUI(false);
-    $("projectName").disabled = true;
-    $("projectName").classList.add("opacity-60");
-    await loadArtifact("old");
+  try{
+    if (slot === "dev"){
+      setDevModeUI();
+      await loadDevProject();
+    }else{
+      setProdOldModeUI(slot);
+      await loadArtifact(slot);
+    }
+  }catch(e){
+    setMsg(String(e.message || e), false);
   }
 }
 
@@ -868,6 +827,7 @@ function showLogin(){
 }
 function setLoginMsg(t){ $("loginMsg").textContent = t || ""; }
 
+/** =========== 綁定事件 =========== */
 $("loginBtn").onclick = () => {
   const u = $("user").value.trim();
   const p = $("pass").value.trim();
@@ -875,20 +835,18 @@ $("loginBtn").onclick = () => {
     localStorage.setItem("WB_LOGIN_OK", "1");
     showApp();
     setSlot("dev");
-    toast("登入成功", true, "已切到 DEV（草稿）");
+    toast("登入成功", true, "已切到 DEV 並自動讀取");
   } else {
     setLoginMsg("帳號或密碼錯誤");
     toast("登入失敗：帳號或密碼錯誤", false);
   }
 };
-
 $("logoutBtn").onclick = () => {
   localStorage.removeItem("WB_LOGIN_OK");
   showLogin();
   toast("已登出", true);
 };
 
-/** =========== Token UI =========== */
 $("saveTokenBtn").onclick = async () => {
   const t = cleanToken($("tokenInput").value);
   if (!t) return tokenMsg("請先貼上 token", false);
@@ -897,15 +855,11 @@ $("saveTokenBtn").onclick = async () => {
   const ok = setTokenToStore(t);
   setTokenPill();
   $("tokenInput").value = "";
-  tokenMsg(ok ? "✅ Token 已儲存（下次不用再貼）" : "✅ Token 已載入（但瀏覽器阻擋儲存）", true);
+  tokenMsg(ok ? "✅ Token 已儲存（同瀏覽器下次不用再貼）" : "✅ Token 已載入（但瀏覽器阻擋儲存，重開需再貼）", true);
 
-  try{
-    if (!$("app").classList.contains("hidden")) await setSlot(slot);
-  }catch(e){
-    setMsg(String(e.message||e), false);
-  }
+  // 重新載入當前槽位（避免沒 token 時讀不到）
+  try{ await setSlot(slot); }catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("clearTokenBtn").onclick = () => {
   runtimeToken = "";
   clearTokenStore();
@@ -913,42 +867,21 @@ $("clearTokenBtn").onclick = () => {
   tokenMsg("已清除 Token（本機儲存已移除）", true);
 };
 
-/** =========== 綁定 UI =========== */
-$("slotDev").onclick  = async () => { try{ await setSlot("dev"); }catch(e){ setMsg(String(e.message||e), false); } };
-$("slotProd").onclick = async () => { try{ await setSlot("prod"); }catch(e){ setMsg(String(e.message||e), false); } };
-$("slotOld").onclick  = async () => { try{ await setSlot("old"); }catch(e){ setMsg(String(e.message||e), false); } };
+$("slotDev").onclick  = async () => await setSlot("dev");
+$("slotProd").onclick = async () => await setSlot("prod");
+$("slotOld").onclick  = async () => await setSlot("old");
 
-$("reloadBtn").onclick = async () => { try{ await setSlot(slot); } catch(e){ setMsg(String(e.message||e), false); } };
+$("reloadBtn").onclick = async () => {
+  try { await loadDevProject(); } catch(e){ setMsg(String(e.message||e), false); }
+};
 $("saveBtn").onclick = async () => {
-  try{
-    if (slot !== "dev") return setMsg("只有 DEV 才能儲存草稿（JSON）", false);
-    await saveDev();
-  }catch(e){ setMsg(String(e.message||e), false); }
+  try { await saveDevProject(); } catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("publishBtn").onclick = async () => {
-  try{
-    if (slot !== "dev") {
-      const ok = confirm("你不在 DEV。發布會以『DEV草稿』整合上線，確定要繼續？");
-      if (!ok) return;
-      await setSlot("dev");
-    }
-    const ok2 = confirm("確定發布到上線？\n會自動：PROD→OLD備份，然後用DEV整合產生新PROD。");
-    if (!ok2) return;
-    await publishToProd();
-  }catch(e){ setMsg(String(e.message||e), false); }
-};
-
-$("rollbackBtn").onclick = async () => {
-  try{
-    const ok = confirm("確定回復舊檔？\n會把 OLD 直接覆蓋到 PROD。");
-    if (!ok) return;
-    await rollbackOldToProd();
-  }catch(e){ setMsg(String(e.message||e), false); }
+  try { await publishDevToProd(); } catch(e){ setMsg(String(e.message||e), false); }
 };
 
 $("addModuleBtn").onclick = () => {
-  if (slot !== "dev") return setMsg("只有 DEV 才能新增模組", false);
   const name = prompt("模組名稱（建議 30_功能名稱）", "30_新功能");
   if (!name) return;
   project.modules.push({ id: crypto.randomUUID(), name: name.trim(), enabled: true, code: `// ${name.trim()}\n\n` });
@@ -957,14 +890,13 @@ $("addModuleBtn").onclick = () => {
 };
 
 $("editor").addEventListener("input", () => {
-  if (slot !== "dev") return;
   if (!editingId) return;
   const m = project.modules.find(x=>x.id===editingId);
   if (m) m.code = $("editor").value;
 });
 
 $("templateBtn").onclick = () => {
-  if (slot !== "dev") return setMsg("只有 DEV 才能插入範本", false);
+  if (slot !== "dev") return setMsg("目前不是 DEV，不能編輯", false);
   if (!editingId) return setMsg("請先點一個模組名稱進入編輯", false);
   const tpl =
 `// 範本：新增 handler
@@ -982,7 +914,7 @@ async function handleExample(request, env, ctx) {
 };
 
 $("formatBtn").onclick = () => {
-  if (slot !== "dev") return setMsg("只有 DEV 才能整理格式", false);
+  if (slot !== "dev") return setMsg("目前不是 DEV，不能編輯", false);
   if (!editingId) return setMsg("請先點一個模組名稱進入編輯", false);
   $("editor").value = $("editor").value.replace(/\t/g,"  ").replace(/\r\n/g,"\n");
   const m = project.modules.find(x=>x.id===editingId);
@@ -991,19 +923,16 @@ $("formatBtn").onclick = () => {
 };
 
 $("buildBtn").onclick = () => {
-  if (slot === "dev"){
-    $("output").value = buildWorkerFromProject(project);
-    renderMeta("已組裝預覽");
-    setMsg("✅ 組裝完成（DEV預覽）：真正上線請按『發布到上線』", true);
-  }else{
-    setMsg("你在 PROD/OLD：這裡就是成品，不需要組裝", false);
-  }
+  if (slot !== "dev") return setMsg("目前不是 DEV，不能組裝", false);
+  $("output").value = buildWorkerFromDev();
+  renderMeta();
+  setMsg("✅ 組裝完成：可直接貼到 Cloudflare Worker", true);
 };
 
 $("copyBtn").onclick = async () => {
   try{
     const v = $("output").value || "";
-    if (!v.trim()) return setMsg("目前沒有內容可複製", false);
+    if (!v.trim()) return setMsg("沒有內容可複製", false);
     await navigator.clipboard.writeText(v);
     setMsg("已複製輸出內容", true);
   }catch{
@@ -1013,27 +942,24 @@ $("copyBtn").onclick = async () => {
 
 $("downloadBtn").onclick = () => {
   const content = $("output").value || "";
-  if (!content.trim()) return setMsg("目前沒有內容可下載", false);
+  if (!content.trim()) return setMsg("沒有內容可下載", false);
   const blob = new Blob([content], { type: "text/javascript;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = (slot === "dev") ? "worker_preview.js" : `worker_${slot}.js`;
+  a.download = `worker_${slot}.js`;
   a.click();
   URL.revokeObjectURL(url);
-  setMsg("已下載", true);
+  setMsg("已下載 worker.js", true);
 };
 
 /** =========== 初始化 =========== */
 (function init(){
   slotBadge(slot);
   chips(slot);
-  renderMeta();
-  renderModules();
-
   setTokenPill();
 
-  // 如果網址有帶 token，順便存起來
+  // 如果網址有帶 token，順便存起來（方便下次）
   const urlT = getTokenFromUrl();
   if (urlT){
     runtimeToken = urlT;
@@ -1052,7 +978,7 @@ $("downloadBtn").onclick = () => {
   const ok = localStorage.getItem("WB_LOGIN_OK") === "1";
   if (ok){
     showApp();
-    setSlot("dev");
+    setSlot("dev"); // 預設進 DEV
   } else {
     showLogin();
   }
