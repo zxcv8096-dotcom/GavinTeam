@@ -6,32 +6,172 @@
   <title>Worker 組裝後台｜GavinTeam（外掛 Token 版）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body{font-family:system-ui,"Microsoft JhengHei";}
+    :root{
+      --ink:#0f172a;
+      --muted:#64748b;
+      --bd:rgba(15,23,42,.10);
+      --glass: rgba(255,255,255,.72);
+      --glass2: rgba(255,255,255,.60);
+      --shadow: 0 24px 70px rgba(2,6,23,.10);
+      --shadow2: 0 10px 30px rgba(2,6,23,.07);
+      --ring: 0 0 0 4px rgba(99,102,241,.18);
+    }
+    body{
+      font-family:system-ui,"Microsoft JhengHei";
+      color:var(--ink);
+      background:
+        radial-gradient(1000px 600px at 15% 10%, rgba(99,102,241,.20), transparent 55%),
+        radial-gradient(900px 520px at 85% 15%, rgba(34,197,94,.15), transparent 55%),
+        radial-gradient(900px 520px at 55% 90%, rgba(14,165,233,.14), transparent 60%),
+        linear-gradient(135deg, #f8fafc, #eef2ff, #ecfeff);
+      -webkit-text-size-adjust:100%;
+    }
     textarea, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
-    .shadow-soft{box-shadow:0 10px 30px rgba(2,6,23,.06);}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:14px;padding:.6rem .95rem;font-weight:900;font-size:12px;user-select:none}
-    .btn-primary{background:#0f172a;color:#fff}
-    .btn-primary:hover{background:#000}
-    .btn-ghost{border:1px solid #e5e7eb;background:#fff}
-    .btn-ghost:hover{background:#f8fafc}
-    .chip{border:1px solid #e5e7eb;border-radius:999px;padding:.35rem .7rem;font-size:12px;font-weight:900}
-    .chip-on{background:#0f172a;color:#fff;border-color:#0f172a}
+    .shadow-soft{box-shadow:var(--shadow2);}
+    .card{
+      background:var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border:1px solid var(--bd);
+      border-radius:26px;
+      box-shadow:var(--shadow);
+    }
+    .card-inner{
+      background:linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.58));
+      border:1px solid rgba(255,255,255,.5);
+      border-radius:22px;
+    }
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+      border-radius:16px;padding:.62rem .95rem;font-weight:900;font-size:12px;user-select:none;
+      transition: transform .08s ease, filter .2s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn-primary{
+      color:#fff;
+      background: linear-gradient(135deg, #0f172a, #111827, #0b1220);
+      box-shadow: 0 12px 22px rgba(2,6,23,.18);
+    }
+    .btn-primary:hover{ filter: brightness(1.06); }
+    .btn-ghost{
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.75);
+    }
+    .btn-ghost:hover{ background: rgba(255,255,255,.92); }
+    .chip{
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:999px;padding:.35rem .7rem;font-size:12px;font-weight:900;
+      background: rgba(255,255,255,.70);
+      transition: all .2s ease;
+    }
+    .chip:hover{ background: rgba(255,255,255,.92); }
+    .chip-on{
+      background: linear-gradient(135deg, rgba(15,23,42,1), rgba(17,24,39,1));
+      color:#fff;border-color: rgba(15,23,42,1);
+      box-shadow: 0 10px 20px rgba(2,6,23,.18);
+    }
     .badge{border-radius:999px;padding:.2rem .55rem;font-size:11px;font-weight:900}
     .badge-dev{background:#e0f2fe;color:#075985}
     .badge-prod{background:#dcfce7;color:#166534}
     .badge-old{background:#fef3c7;color:#92400e}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:24px}
-    .step{border:1px solid #e5e7eb;border-radius:18px;padding:12px}
-    .step strong{color:#0f172a}
-    .row{border:1px solid #e5e7eb;border-radius:18px;padding:10px}
-    .row:hover{background:#f8fafc}
+    .row{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:18px;padding:10px;
+      background: rgba(255,255,255,.55);
+      transition: transform .12s ease, background .2s ease, border-color .2s ease;
+    }
+    .row:hover{ background: rgba(255,255,255,.86); transform: translateY(-1px); }
     .handle{cursor:grab}
     .handle:active{cursor:grabbing}
-    .pill{border:1px solid #e5e7eb;border-radius:999px;padding:.25rem .6rem;font-size:11px;font-weight:900}
+    .pill{
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:999px;padding:.25rem .65rem;font-size:11px;font-weight:900;
+      background: rgba(255,255,255,.65);
+    }
+    input:focus, textarea:focus{
+      outline:none;
+      box-shadow: var(--ring);
+      border-color: rgba(99,102,241,.55) !important;
+    }
+
+    /* ====== Toast ====== */
+    .toast-wrap{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast{
+      pointer-events: none;
+      min-width: 280px;
+      max-width: 420px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.5);
+      background: rgba(255,255,255,.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(2,6,23,.14);
+      display:flex;align-items:flex-start;gap:10px;
+      transform: translateY(10px);
+      opacity: 0;
+      animation: toastIn .22s ease forwards;
+    }
+    .toast.hide{
+      animation: toastOut .22s ease forwards;
+    }
+    .toast .dot{
+      margin-top: 4px;
+      width:10px;height:10px;border-radius:999px;
+      box-shadow: 0 0 0 5px rgba(16,185,129,.12);
+      flex: 0 0 auto;
+    }
+    .toast.ok .dot{ background:#10b981; box-shadow: 0 0 0 5px rgba(16,185,129,.12); }
+    .toast.err .dot{ background:#ef4444; box-shadow: 0 0 0 5px rgba(239,68,68,.12); }
+    .toast .t{
+      font-weight: 900;
+      font-size: 12px;
+      color: #0f172a;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .toast .s{
+      margin-top:2px;
+      font-size: 11px;
+      color: rgba(100,116,139,1);
+    }
+    @keyframes toastIn{
+      from{ opacity:0; transform: translateY(12px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+    @keyframes toastOut{
+      from{ opacity:1; transform: translateY(0); }
+      to{ opacity:0; transform: translateY(10px); }
+    }
+
+    /* 小裝飾：頂部光暈 */
+    .top-glow{
+      position: fixed;
+      inset: -200px -200px auto -200px;
+      height: 360px;
+      background:
+        radial-gradient(closest-side at 20% 60%, rgba(99,102,241,.24), transparent 65%),
+        radial-gradient(closest-side at 70% 40%, rgba(14,165,233,.18), transparent 65%),
+        radial-gradient(closest-side at 90% 70%, rgba(34,197,94,.14), transparent 65%);
+      filter: blur(10px);
+      pointer-events:none;
+      z-index: 0;
+    }
   </style>
 </head>
 
-<body class="min-h-screen bg-slate-50">
+<body class="min-h-screen">
+<div class="top-glow"></div>
+
 <script>
 /** =========================
  * ✅ 你只要改這裡
@@ -39,9 +179,6 @@
 const CONFIG = {
   // 你的 Gist ID（網址最後那段）
   GIST_ID: "17db93f6b4d4813bcbcfc66cc4ba343f",
-
-  // ✅ 外掛 Token 版：不再把 token 寫死在這裡
-  // GITHUB_TOKEN: "xxxxx"  ← 已移除
 
   // 登入帳密（純前端）
   LOGIN_USER: "gavin",
@@ -52,51 +189,55 @@ const CONFIG = {
 };
 </script>
 
+<!-- ✅ Toast 容器（狀態顯示幾秒就消失） -->
+<div id="toastWrap" class="toast-wrap"></div>
+
 <!-- ===== 登入畫面 ===== -->
-<div id="loginScreen" class="min-h-screen flex items-center justify-center p-6">
-  <div class="w-full max-w-md card shadow-soft p-6">
-    <div class="flex items-center gap-3">
-      <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black">G</div>
-      <div>
-        <div class="text-lg font-extrabold text-slate-900">Worker 組裝後台</div>
-        <div class="text-xs text-slate-500 mt-0.5">登入後：切換狀態（自動讀檔）→ 改模組 → 組裝 → 貼 Cloudflare</div>
-      </div>
-    </div>
-
-    <div class="mt-6 space-y-3">
-      <div>
-        <label class="text-xs font-bold text-slate-600">帳號</label>
-        <input id="user" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm" placeholder="輸入帳號">
-      </div>
-      <div>
-        <label class="text-xs font-bold text-slate-600">密碼</label>
-        <input id="pass" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm" placeholder="輸入密碼">
+<div id="loginScreen" class="min-h-screen flex items-center justify-center p-6 relative z-10">
+  <div class="w-full max-w-md card p-6">
+    <div class="card-inner p-4">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black shadow-soft">G</div>
+        <div class="min-w-0">
+          <div class="text-lg font-extrabold text-slate-900">Worker 組裝後台</div>
+          <div class="text-xs text-slate-500 mt-0.5">登入後：切換狀態 → 改模組 → 組裝 → 貼 Cloudflare</div>
+        </div>
       </div>
 
-      <button id="loginBtn" class="btn btn-primary w-full">登入</button>
-      <div id="loginMsg" class="text-xs text-red-700"></div>
-    </div>
+      <div class="mt-5 space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-600">帳號</label>
+          <input id="user" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="輸入帳號">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600">密碼</label>
+          <input id="pass" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="輸入密碼">
+        </div>
 
-    <div class="mt-6 text-[11px] text-slate-500">
-      版本分類：開發中 DEV｜已上線 PROD｜舊檔 OLD（自動讀取對應檔案）
+        <button id="loginBtn" class="btn btn-primary w-full">登入</button>
+        <div id="loginMsg" class="text-xs text-red-700"></div>
+      </div>
+
+      <div class="mt-5 text-[11px] text-slate-500">
+        分類：DEV｜PROD｜OLD（切換後自動讀取對應雲端檔案）
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ===== 主畫面 ===== -->
-<div id="app" class="hidden">
+<div id="app" class="hidden relative z-10">
   <!-- Top bar -->
-  <div class="sticky top-0 z-20 bg-slate-50/80 backdrop-blur border-b">
+  <div class="sticky top-0 z-20 bg-white/35 backdrop-blur border-b border-white/40">
     <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <div class="text-xl font-extrabold text-slate-900">Worker 組裝後台</div>
           <span id="slotBadge" class="badge badge-dev">DEV</span>
-          <span id="autoLoadHint" class="text-[11px] text-slate-500">（切換狀態會自動讀取雲端檔案）</span>
-          <span id="tokenStatePill" class="pill bg-slate-50 text-slate-600">Token：未載入</span>
+          <span id="tokenStatePill" class="pill">Token：未載入</span>
         </div>
-        <div class="text-xs text-slate-500 mt-1">
-          直覺流程：<span class="font-bold text-slate-700">①切換狀態（自動讀）</span> → <span class="font-bold text-slate-700">②修改模組</span> → <span class="font-bold text-slate-700">③組裝輸出</span>
+        <div class="text-xs text-slate-600 mt-1">
+          狀態切換會自動讀取雲端檔案；輸出前請先按「組裝」。
         </div>
       </div>
 
@@ -110,131 +251,159 @@ const CONFIG = {
   </div>
 
   <div class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-    <!-- 左：引導 + 版本操作 -->
+    <!-- 左：版本操作（✅ 已移除「介面說明/操作引導」整塊） -->
     <div class="lg:col-span-3">
-      <div class="card shadow-soft p-4">
-        <div class="text-sm font-extrabold text-slate-900">操作引導（照順序）</div>
+      <div class="card p-4">
+        <div class="card-inner p-4">
+          <div class="text-sm font-extrabold text-slate-900">控制台</div>
 
-        <div class="mt-3 space-y-2 text-sm">
-          <div class="step">
-            <strong>① 切換狀態</strong>
-            <div class="text-xs text-slate-600 mt-1">點上方「開發中／已上線／舊檔」，會自動讀取對應雲端檔案。</div>
+          <!-- ✅ Token 外掛區塊 -->
+          <div class="mt-3">
+            <div class="text-sm font-extrabold text-slate-900">Token 外掛</div>
+            <div class="text-xs text-slate-500 mt-1">取用順序：URL(#token / ?token) → 本機儲存 → 手動貼上</div>
+
+            <div class="mt-3">
+              <label class="text-xs font-bold text-slate-600">GitHub Token（只存在這台瀏覽器）</label>
+              <input id="tokenInput" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70"
+                     placeholder="貼上 ghp_... 或 github_pat_...">
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <button id="saveTokenBtn" class="btn btn-primary">儲存 Token</button>
+                <button id="clearTokenBtn" class="btn btn-ghost">清除 Token</button>
+              </div>
+              <div id="tokenMsg" class="mt-2 text-xs text-slate-500"></div>
+            </div>
           </div>
-          <div class="step">
-            <strong>② 修改模組</strong>
-            <div class="text-xs text-slate-600 mt-1">點模組名稱編輯；可拖曳排序；可啟用/停用。</div>
+
+          <div class="h-px bg-white/50 my-4"></div>
+
+          <div class="text-sm font-extrabold text-slate-900">版本資訊</div>
+          <div id="metaText" class="text-xs text-slate-600 mt-1">尚未讀取</div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button id="reloadBtn" class="btn btn-ghost">重新讀取</button>
+            <button id="saveBtn" class="btn btn-primary">儲存到雲端</button>
           </div>
-          <div class="step">
-            <strong>③ 組裝輸出</strong>
-            <div class="text-xs text-slate-600 mt-1">按「組裝」產生 worker.js → 複製貼到 Cloudflare。</div>
-          </div>
-        </div>
 
-        <div class="h-px bg-slate-100 my-4"></div>
-
-        <!-- ✅ Token 外掛區塊 -->
-        <div class="text-sm font-extrabold text-slate-900">Token 外掛</div>
-        <div class="text-xs text-slate-500 mt-1">
-          取用順序：URL(#token/ ?token) → 本機儲存 → 手動貼上
-        </div>
-
-        <div class="mt-3">
-          <label class="text-xs font-bold text-slate-600">GitHub Token（只存在這台瀏覽器）</label>
-          <input id="tokenInput" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm"
-                 placeholder="貼上 ghp_... 或 github_pat_...">
           <div class="mt-2 grid grid-cols-2 gap-2">
-            <button id="saveTokenBtn" class="btn btn-primary">儲存 Token</button>
-            <button id="clearTokenBtn" class="btn btn-ghost">清除 Token</button>
+            <button id="devToProdBtn" class="btn btn-ghost">開發中 → 上線</button>
+            <button id="prodToOldBtn" class="btn btn-ghost">上線 → 舊檔備份</button>
           </div>
-          <div id="tokenMsg" class="mt-2 text-xs text-slate-500"></div>
+
+          <div class="mt-4">
+            <label class="text-xs font-bold text-slate-600">專案名稱</label>
+            <input id="projectName" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="例如：LINE 工具 Worker">
+          </div>
+
+          <!-- ✅ 原本 msg 會常駐，現在改成 toast，不再佔版面 -->
+          <div id="msg" class="hidden"></div>
         </div>
-
-        <div class="h-px bg-slate-100 my-4"></div>
-
-        <div class="text-sm font-extrabold text-slate-900">版本資訊</div>
-        <div id="metaText" class="text-xs text-slate-500 mt-1">尚未讀取</div>
-
-        <div class="mt-3 grid grid-cols-2 gap-2">
-          <button id="reloadBtn" class="btn btn-ghost">重新讀取</button>
-          <button id="saveBtn" class="btn btn-primary">儲存到雲端</button>
-        </div>
-
-        <div class="mt-2 grid grid-cols-2 gap-2">
-          <button id="devToProdBtn" class="btn btn-ghost">開發中 → 上線</button>
-          <button id="prodToOldBtn" class="btn btn-ghost">上線 → 舊檔備份</button>
-        </div>
-
-        <div class="mt-4">
-          <label class="text-xs font-bold text-slate-600">專案名稱</label>
-          <input id="projectName" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm" placeholder="例如：LINE 工具 Worker">
-        </div>
-
-        <div id="msg" class="mt-3 text-xs"></div>
       </div>
     </div>
 
     <!-- 中：模組清單 -->
     <div class="lg:col-span-4">
-      <div class="card shadow-soft p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm font-extrabold text-slate-900">模組清單</div>
-            <div class="text-xs text-slate-500 mt-1">拖曳「≡」可排序（排序會影響組裝順序）</div>
+      <div class="card p-4">
+        <div class="card-inner p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-extrabold text-slate-900">模組清單</div>
+              <div class="text-xs text-slate-600 mt-1">拖曳「≡」可排序（排序會影響組裝順序）</div>
+            </div>
+            <button id="addModuleBtn" class="btn btn-ghost">＋ 新增模組</button>
           </div>
-          <button id="addModuleBtn" class="btn btn-ghost">＋ 新增模組</button>
-        </div>
 
-        <div id="moduleList" class="mt-3 space-y-2"></div>
+          <div id="moduleList" class="mt-3 space-y-2"></div>
+        </div>
       </div>
     </div>
 
     <!-- 右：編輯 + 輸出 -->
     <div class="lg:col-span-5">
-      <div class="card shadow-soft p-4">
-        <div class="flex items-start justify-between gap-2 flex-wrap">
-          <div>
-            <div class="text-sm font-extrabold text-slate-900">模組編輯</div>
-            <div class="text-xs text-slate-500 mt-1">正在編輯：<span id="editingName" class="font-bold text-slate-700">（未選）</span></div>
+      <div class="card p-4">
+        <div class="card-inner p-4">
+          <div class="flex items-start justify-between gap-2 flex-wrap">
+            <div>
+              <div class="text-sm font-extrabold text-slate-900">模組編輯</div>
+              <div class="text-xs text-slate-600 mt-1">正在編輯：<span id="editingName" class="font-bold text-slate-800">（未選）</span></div>
+            </div>
+            <div class="flex gap-2">
+              <button id="templateBtn" class="btn btn-ghost">插入範本</button>
+              <button id="formatBtn" class="btn btn-ghost">簡易整理</button>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button id="templateBtn" class="btn btn-ghost">插入範本</button>
-            <button id="formatBtn" class="btn btn-ghost">簡易整理</button>
+
+          <textarea id="editor" class="mt-3 w-full h-[280px] px-3 py-3 border rounded-2xl text-sm bg-white/70"
+            placeholder="點左邊模組名稱開始編輯"></textarea>
+
+          <div class="h-px bg-white/50 my-4"></div>
+
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <div class="text-sm font-extrabold text-slate-900">輸出：worker.js</div>
+              <div class="text-xs text-slate-600 mt-1">按組裝 → 複製 → 貼到 Cloudflare Worker</div>
+            </div>
+            <div class="flex gap-2">
+              <button id="buildBtn" class="btn btn-primary">組裝</button>
+              <button id="copyBtn" class="btn btn-ghost">複製</button>
+              <button id="downloadBtn" class="btn btn-ghost">下載</button>
+            </div>
           </div>
+
+          <textarea id="output" class="mt-3 w-full h-[270px] px-3 py-3 border rounded-2xl text-sm mono bg-white/70"
+            placeholder="// 按「組裝」產生完整 worker.js"></textarea>
         </div>
-
-        <textarea id="editor" class="mt-3 w-full h-[280px] px-3 py-3 border rounded-2xl text-sm"
-          placeholder="點左邊模組名稱開始編輯"></textarea>
-
-        <div class="h-px bg-slate-100 my-4"></div>
-
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <div>
-            <div class="text-sm font-extrabold text-slate-900">輸出：worker.js</div>
-            <div class="text-xs text-slate-500 mt-1">按組裝 → 複製 → 貼到 Cloudflare Worker</div>
-          </div>
-          <div class="flex gap-2">
-            <button id="buildBtn" class="btn btn-primary">組裝</button>
-            <button id="copyBtn" class="btn btn-ghost">複製</button>
-            <button id="downloadBtn" class="btn btn-ghost">下載</button>
-          </div>
-        </div>
-
-        <textarea id="output" class="mt-3 w-full h-[270px] px-3 py-3 border rounded-2xl text-sm mono"
-          placeholder="// 按「組裝」產生完整 worker.js"></textarea>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-/** ===========
- * 工具 / UI
- * =========== */
+/** =========== 工具 / UI =========== */
 const $ = (id) => document.getElementById(id);
-function setMsg(text, ok=true){
-  $("msg").className = "mt-3 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
-  $("msg").textContent = text;
+function nowISO(){ return new Date().toISOString(); }
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, (c)=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
 }
+
+/** ✅ Toast：狀態顯示幾秒後消失 */
+let toastTimer = 0;
+function toast(text, ok=true, sub=""){
+  const wrap = $("toastWrap");
+  const el = document.createElement("div");
+  el.className = "toast " + (ok ? "ok" : "err");
+  el.innerHTML = `
+    <div class="dot"></div>
+    <div class="min-w-0">
+      <div class="t">${escapeHtml(text)}</div>
+      ${sub ? `<div class="s">${escapeHtml(sub)}</div>` : ``}
+    </div>
+  `;
+  wrap.appendChild(el);
+
+  // 多個 toast：保留最多 3 個
+  while (wrap.children.length > 3) wrap.removeChild(wrap.firstChild);
+
+  // 自動消失（預設 2.6 秒）
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.add("hide");
+    setTimeout(()=> el.remove(), 260);
+  }, 2600);
+}
+
+// 舊 msg API：改導到 toast（不再常駐顯示）
+function setMsg(text, ok=true){
+  toast(text, ok);
+}
+function tokenMsg(text, ok=true){
+  // tokenMsg 原本顯示在左側小字，保留但也用 toast 提醒
+  $("tokenMsg").className = "mt-2 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
+  $("tokenMsg").textContent = text || "";
+  if (text) toast(text, ok, "Token 外掛");
+}
+
 function slotBadge(slot){
   const badge = $("slotBadge");
   badge.className = "badge " + (slot==="prod" ? "badge-prod" : slot==="old" ? "badge-old" : "badge-dev");
@@ -245,18 +414,12 @@ function chips(slot){
   $("slotProd").classList.toggle("chip-on", slot==="prod");
   $("slotOld").classList.toggle("chip-on", slot==="old");
 }
-function nowISO(){ return new Date().toISOString(); }
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g, (c)=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
-}
 
 /** =====================================================
  * ✅ 外掛 Token：URL / localStorage / 手動輸入
  * ===================================================== */
 const TOKEN_STORE_KEY = "WB_GH_TOKEN";
-let runtimeToken = ""; // 本次 session 用的 token（不寫死在 CONFIG）
+let runtimeToken = "";
 
 function cleanToken(input){
   return String(input||"")
@@ -264,7 +427,6 @@ function cleanToken(input){
     .replace(/\s+/g,"")
     .replace(/[^\x20-\x7E]/g,"");
 }
-
 function getTokenFromUrl(){
   // 1) hash: #token=xxxx
   try{
@@ -276,54 +438,31 @@ function getTokenFromUrl(){
       if (t) return cleanToken(t);
     }
   }catch{}
-
   // 2) query: ?token=xxxx
   try{
     const sp = new URLSearchParams(location.search || "");
     const t = sp.get("token");
     if (t) return cleanToken(t);
   }catch{}
-
   return "";
 }
-
 function getTokenFromStore(){
-  try{
-    return cleanToken(localStorage.getItem(TOKEN_STORE_KEY) || "");
-  }catch{
-    return "";
-  }
+  try{ return cleanToken(localStorage.getItem(TOKEN_STORE_KEY) || ""); }
+  catch{ return ""; }
 }
-
 function setTokenToStore(t){
-  try{
-    localStorage.setItem(TOKEN_STORE_KEY, cleanToken(t));
-    return true;
-  }catch{
-    return false;
-  }
+  try{ localStorage.setItem(TOKEN_STORE_KEY, cleanToken(t)); return true; }
+  catch{ return false; }
 }
-
 function clearTokenStore(){
-  try{
-    localStorage.removeItem(TOKEN_STORE_KEY);
-    return true;
-  }catch{
-    return false;
-  }
+  try{ localStorage.removeItem(TOKEN_STORE_KEY); return true; }
+  catch{ return false; }
 }
-
 function resolveToken(){
-  // 優先：URL → localStorage → runtimeToken（可能由手動輸入設定）
-  const u = getTokenFromUrl();
-  if (u) return u;
-
-  const s = getTokenFromStore();
-  if (s) return s;
-
+  const u = getTokenFromUrl(); if (u) return u;
+  const s = getTokenFromStore(); if (s) return s;
   return cleanToken(runtimeToken);
 }
-
 function setTokenPill(){
   const t = resolveToken();
   const pill = $("tokenStatePill");
@@ -332,14 +471,9 @@ function setTokenPill(){
     pill.className = "pill bg-emerald-50 text-emerald-700 border-emerald-200";
     pill.textContent = `Token：已載入（…${tail}）`;
   }else{
-    pill.className = "pill bg-slate-50 text-slate-600";
+    pill.className = "pill";
     pill.textContent = "Token：未載入";
   }
-}
-
-function tokenMsg(text, ok=true){
-  $("tokenMsg").className = "mt-2 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
-  $("tokenMsg").textContent = text || "";
 }
 
 /** =====================================================
@@ -347,17 +481,14 @@ function tokenMsg(text, ok=true){
  * ===================================================== */
 function authHeaders(){
   const t = resolveToken();
-
   const h = {
     "Accept": "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28"
   };
   if (!t) return h;
-
   h["Authorization"] = t.startsWith("github_pat_") ? `Bearer ${t}` : `token ${t}`;
   return h;
 }
-
 async function readGitHubError(res){
   let txt = "";
   try { txt = await res.text(); } catch {}
@@ -368,22 +499,17 @@ async function readGitHubError(res){
   return `GitHub API ${res.status}：${txt || res.statusText}`;
 }
 
-/** ===========
- * Gist API
- * =========== */
+/** =========== Gist API =========== */
 async function gistGet(){
-  const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
-    headers: authHeaders()
-  });
+  const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, { headers: authHeaders() });
   if (!res.ok) throw new Error(await readGitHubError(res));
   return await res.json();
 }
 async function gistReadFile(slot){
   const resHeaders = authHeaders();
   if (!resHeaders.Authorization){
-    throw new Error("尚未載入 GitHub Token：請在左側「Token 外掛」貼上後儲存，或用網址帶 #token=...");
+    throw new Error("尚未載入 GitHub Token：請在左側貼上後儲存，或用網址帶 #token=...");
   }
-
   const gist = await gistGet();
   const filename = CONFIG.FILES[slot];
   const file = gist.files?.[filename];
@@ -395,7 +521,6 @@ async function gistWriteFile(slot, content){
   if (!resHeaders.Authorization){
     throw new Error("尚未載入 GitHub Token：請先載入 token 才能寫入 gist");
   }
-
   const filename = CONFIG.FILES[slot];
   const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
     method: "PATCH",
@@ -406,9 +531,7 @@ async function gistWriteFile(slot, content){
   return await res.json();
 }
 
-/** ===========
- * 狀態
- * =========== */
+/** =========== 狀態 =========== */
 const DEFAULT_PROJECT = () => ({
   name: "我的 Worker",
   updatedAt: nowISO(),
@@ -458,12 +581,10 @@ let slot = "dev";
 let project = DEFAULT_PROJECT();
 let editingId = null;
 
-/** ===========
- * 渲染
- * =========== */
+/** =========== 渲染 =========== */
 function renderMeta(){
   $("projectName").value = project.name || "";
-  $("metaText").textContent = `目前狀態：${slot.toUpperCase()} · 更新時間：${project.updatedAt || "—"} · 模組數：${project.modules?.length || 0}`;
+  $("metaText").textContent = `狀態：${slot.toUpperCase()} · 更新：${project.updatedAt || "—"} · 模組：${project.modules?.length || 0}`;
 }
 function renderModules(){
   const wrap = $("moduleList");
@@ -483,7 +604,7 @@ function renderModules(){
             <input type="checkbox" class="h-4 w-4" ${m.enabled ? "checked" : ""} data-act="toggle">
             <button class="text-left font-extrabold text-sm text-slate-900 truncate hover:underline" data-act="edit">${escapeHtml(m.name)}</button>
           </div>
-          <div class="text-[11px] text-slate-500 mt-1 mono truncate">${m.enabled ? "啟用中" : "停用"} · ${m.id}</div>
+          <div class="text-[11px] text-slate-600 mt-1 mono truncate">${m.enabled ? "啟用中" : "停用"} · ${m.id}</div>
         </div>
       </div>
       <div class="flex gap-1 flex-shrink-0">
@@ -505,7 +626,7 @@ function renderModules(){
     // 拖曳排序
     row.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", m.id);
-      row.style.opacity = ".5";
+      row.style.opacity = ".55";
     });
     row.addEventListener("dragend", () => row.style.opacity = "1");
     row.addEventListener("dragover", (e) => { e.preventDefault(); });
@@ -551,7 +672,9 @@ function onModuleAction(act, id){
     copy.id = crypto.randomUUID();
     copy.name = m.name + "_複製";
     project.modules.splice(i+1, 0, copy);
-    renderModules(); return;
+    renderModules();
+    setMsg("已複製模組", true);
+    return;
   }
   if (act === "del"){
     if (!confirm(`刪除模組「${m.name}」？`)) return;
@@ -561,13 +684,13 @@ function onModuleAction(act, id){
       $("editingName").textContent = "（未選）";
       $("editor").value = "";
     }
-    renderModules(); return;
+    renderModules();
+    setMsg("已刪除模組", true);
+    return;
   }
 }
 
-/** ===========
- * 組裝
- * =========== */
+/** =========== 組裝 =========== */
 function buildWorker(){
   project.name = $("projectName").value.trim() || project.name;
   project.updatedAt = nowISO();
@@ -588,9 +711,7 @@ function buildWorker(){
   return `${header}\n${body}\n`;
 }
 
-/** ===========
- * 雲端操作（依狀態）
- * =========== */
+/** =========== 雲端操作（依狀態） =========== */
 async function loadSlot(){
   setTokenPill();
 
@@ -603,11 +724,11 @@ async function loadSlot(){
   editingId = null;
   $("editingName").textContent = "（未選）";
   $("editor").value = "";
-  $("output").value = ""; // 切狀態時清空輸出，避免誤貼
+  $("output").value = "";
 
   renderMeta();
   renderModules();
-  setMsg(`✅ 已讀取雲端檔案：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
+  setMsg(`✅ 已讀取：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
 }
 
 async function saveSlot(){
@@ -617,7 +738,7 @@ async function saveSlot(){
   project.updatedAt = nowISO();
   await gistWriteFile(slot, JSON.stringify(project, null, 2));
   renderMeta();
-  setMsg(`✅ 已儲存到雲端：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
+  setMsg(`✅ 已儲存：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
 }
 
 async function copySlot(from, to){
@@ -641,9 +762,7 @@ async function setSlot(next){
   }
 }
 
-/** ===========
- * 登入
- * =========== */
+/** =========== 登入 =========== */
 function showApp(){
   $("loginScreen").classList.add("hidden");
   $("app").classList.remove("hidden");
@@ -660,34 +779,31 @@ $("loginBtn").onclick = () => {
   if (u === CONFIG.LOGIN_USER && p === CONFIG.LOGIN_PASS) {
     localStorage.setItem("WB_LOGIN_OK", "1");
     showApp();
-    setSlot("dev"); // 登入後立刻讀 DEV
+    setSlot("dev");
+    toast("登入成功", true, "已切到 DEV 並自動讀取");
   } else {
     setLoginMsg("帳號或密碼錯誤");
+    toast("登入失敗：帳號或密碼錯誤", false);
   }
 };
 
 $("logoutBtn").onclick = () => {
   localStorage.removeItem("WB_LOGIN_OK");
   showLogin();
+  toast("已登出", true);
 };
 
-/** ===========
- * Token 外掛 UI 綁定
- * =========== */
+/** =========== Token 外掛 UI 綁定 =========== */
 $("saveTokenBtn").onclick = async () => {
   const t = cleanToken($("tokenInput").value);
   if (!t) return tokenMsg("請先貼上 token", false);
 
-  // 先寫到 runtimeToken（避免某些瀏覽器 storage 被阻擋時完全不能用）
   runtimeToken = t;
-
-  // 試著存到 localStorage
   const ok = setTokenToStore(t);
   setTokenPill();
   $("tokenInput").value = "";
-  tokenMsg(ok ? "✅ Token 已儲存（下次同瀏覽器不用再貼）" : "✅ Token 已載入（但瀏覽器阻擋儲存，重開需再貼）", true);
+  tokenMsg(ok ? "✅ Token 已儲存（同瀏覽器下次不用再貼）" : "✅ Token 已載入（但瀏覽器阻擋儲存，重開需再貼）", true);
 
-  // 有 token 後，直接幫你讀一次目前狀態檔（若你已經在 app 中）
   try{
     if (!$("app").classList.contains("hidden")) await loadSlot();
   }catch(e){
@@ -702,9 +818,7 @@ $("clearTokenBtn").onclick = () => {
   tokenMsg("已清除 Token（本機儲存已移除）", true);
 };
 
-/** ===========
- * 綁定 UI
- * =========== */
+/** =========== 綁定 UI =========== */
 $("slotDev").onclick  = async () => await setSlot("dev");
 $("slotProd").onclick = async () => await setSlot("prod");
 $("slotOld").onclick  = async () => await setSlot("old");
@@ -712,18 +826,15 @@ $("slotOld").onclick  = async () => await setSlot("old");
 $("reloadBtn").onclick = async () => {
   try { await loadSlot(); } catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("saveBtn").onclick = async () => {
   try { await saveSlot(); } catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("devToProdBtn").onclick = async () => {
   try {
     await copySlot("dev","prod");
     if (slot === "prod") await loadSlot();
   } catch(e){ setMsg(String(e.message||e), false); }
 };
-
 $("prodToOldBtn").onclick = async () => {
   try {
     await copySlot("prod","old");
@@ -736,6 +847,7 @@ $("addModuleBtn").onclick = () => {
   if (!name) return;
   project.modules.push({ id: crypto.randomUUID(), name: name.trim(), enabled: true, code: `// ${name.trim()}\n\n` });
   renderModules();
+  setMsg("已新增模組", true);
 };
 
 $("editor").addEventListener("input", () => {
@@ -758,6 +870,7 @@ async function handleExample(request, env, ctx) {
   $("editor").value = ($("editor").value || "") + "\n\n" + tpl;
   const m = project.modules.find(x=>x.id===editingId);
   if (m) m.code = $("editor").value;
+  setMsg("已插入範本", true);
 };
 
 $("formatBtn").onclick = () => {
@@ -765,6 +878,7 @@ $("formatBtn").onclick = () => {
   $("editor").value = $("editor").value.replace(/\t/g,"  ").replace(/\r\n/g,"\n");
   const m = project.modules.find(x=>x.id===editingId);
   if (m) m.code = $("editor").value;
+  setMsg("已簡易整理格式", true);
 };
 
 $("buildBtn").onclick = () => {
@@ -775,10 +889,12 @@ $("buildBtn").onclick = () => {
 
 $("copyBtn").onclick = async () => {
   try{
-    await navigator.clipboard.writeText($("output").value || "");
+    const v = $("output").value || "";
+    if (!v.trim()) return setMsg("請先按組裝", false);
+    await navigator.clipboard.writeText(v);
     setMsg("已複製輸出內容", true);
   }catch{
-    setMsg("複製失敗：請先按組裝", false);
+    setMsg("複製失敗：請確認瀏覽器剪貼簿權限", false);
   }
 };
 
@@ -795,34 +911,29 @@ $("downloadBtn").onclick = () => {
   setMsg("已下載 worker.js", true);
 };
 
-/** ===========
- * 初始化
- * =========== */
+/** =========== 初始化 =========== */
 (function init(){
   slotBadge(slot);
   chips(slot);
   renderMeta();
   renderModules();
 
-  // 初始化 token 狀態：URL / localStorage / runtime
   setTokenPill();
 
-  // 如果網址有帶 token（#token 或 ?token），順便把它存起來（方便下次）
+  // 如果網址有帶 token，順便存起來（方便下次）
   const urlT = getTokenFromUrl();
   if (urlT){
     runtimeToken = urlT;
     setTokenToStore(urlT); // 存不起來也沒關係
     tokenMsg("✅ 已從網址載入 Token（並嘗試存到本機）", true);
 
-    // 建議把 hash token 清掉，避免你複製網址時不小心外流
-    // 只清 #token，保留其它 hash 參數（如果有的話）
+    // 清掉 #token 避免外流
     try{
       if (location.hash && location.hash.includes("token=")){
         history.replaceState(null, "", location.pathname + location.search);
       }
     }catch{}
   }else{
-    // 如果 localStorage 有 token，顯示提示（不曝光內容）
     const st = getTokenFromStore();
     if (st) tokenMsg("已載入本機儲存的 Token（同瀏覽器有效）", true);
   }
