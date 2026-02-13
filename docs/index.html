@@ -3,263 +3,98 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Worker 組裝後台｜GavinTeam（SE 太空戰士風）</title>
+  <title>Worker 組裝後台｜GavinTeam（外掛 Token 版）</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    /* =========================================================
-       SE / Final Fantasy-ish Sci-Fi HUD Theme (no images)
-       - Dark space + nebula glow
-       - Holographic glass panels
-       - Grid + scanlines + subtle noise
-       - Neon accents, crisp outlines, HUD chips
-       ========================================================= */
     :root{
-      --bg0:#050712;
-      --bg1:#070a1a;
-      --ink:#e7ecff;
-      --muted:#9aa8d6;
-
-      --cyan:#57e6ff;
-      --blue:#7aa6ff;
-      --violet:#b38bff;
-      --green:#42ffb5;
-      --amber:#ffcf6a;
-      --red:#ff5a7a;
-
-      --bd: rgba(120,160,255,.22);
-      --bd2: rgba(87,230,255,.18);
-
-      --glass: rgba(12,18,40,.50);
-      --glass2: rgba(10,14,30,.42);
-
-      --shadow: 0 28px 90px rgba(0,0,0,.60);
-      --shadow2: 0 14px 40px rgba(0,0,0,.45);
-
-      --ring: 0 0 0 3px rgba(87,230,255,.18), 0 0 0 9px rgba(122,166,255,.10);
+      --ink:#0f172a;
+      --muted:#64748b;
+      --bd:rgba(15,23,42,.10);
+      --glass: rgba(255,255,255,.72);
+      --glass2: rgba(255,255,255,.60);
+      --shadow: 0 24px 70px rgba(2,6,23,.10);
+      --shadow2: 0 10px 30px rgba(2,6,23,.07);
+      --ring: 0 0 0 4px rgba(99,102,241,.18);
     }
-
     body{
       font-family:system-ui,"Microsoft JhengHei";
       color:var(--ink);
       background:
-        radial-gradient(1200px 700px at 15% 8%, rgba(179,139,255,.24), transparent 60%),
-        radial-gradient(1000px 620px at 85% 18%, rgba(87,230,255,.18), transparent 55%),
-        radial-gradient(950px 550px at 50% 90%, rgba(66,255,181,.10), transparent 60%),
-        radial-gradient(700px 520px at 65% 40%, rgba(122,166,255,.10), transparent 62%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
+        radial-gradient(1000px 600px at 15% 10%, rgba(99,102,241,.20), transparent 55%),
+        radial-gradient(900px 520px at 85% 15%, rgba(34,197,94,.15), transparent 55%),
+        radial-gradient(900px 520px at 55% 90%, rgba(14,165,233,.14), transparent 60%),
+        linear-gradient(135deg, #f8fafc, #eef2ff, #ecfeff);
       -webkit-text-size-adjust:100%;
-      overflow-x:hidden;
     }
-
-    textarea, .mono{
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-    }
-
-    /* Background HUD overlays */
-    .hud-bg{
-      position:fixed; inset:0; pointer-events:none; z-index:0;
-    }
-    .hud-bg::before{
-      /* grid */
-      content:"";
-      position:absolute; inset:0;
-      background:
-        linear-gradient(rgba(87,230,255,.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(87,230,255,.05) 1px, transparent 1px);
-      background-size: 42px 42px;
-      mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,.9), rgba(0,0,0,.25) 55%, transparent 80%);
-      opacity:.55;
-      filter: blur(.0px);
-    }
-    .hud-bg::after{
-      /* scanlines + subtle noise */
-      content:"";
-      position:absolute; inset:0;
-      background:
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,.04),
-          rgba(255,255,255,.04) 1px,
-          rgba(0,0,0,0) 2px,
-          rgba(0,0,0,0) 6px
-        );
-      opacity:.18;
-      mix-blend-mode: overlay;
-    }
-
-    /* Top glow strip */
-    .top-glow{
-      position:fixed;
-      inset:-220px -220px auto -220px;
-      height:420px;
-      background:
-        radial-gradient(closest-side at 25% 65%, rgba(87,230,255,.26), transparent 65%),
-        radial-gradient(closest-side at 70% 40%, rgba(179,139,255,.22), transparent 65%),
-        radial-gradient(closest-side at 90% 70%, rgba(66,255,181,.14), transparent 65%);
-      filter: blur(14px);
-      pointer-events:none;
-      z-index:0;
-      opacity:.9;
-    }
-
-    /* Panels */
+    textarea, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .shadow-soft{box-shadow:var(--shadow2);}
     .card{
-      background: linear-gradient(180deg, rgba(12,18,40,.62), rgba(10,14,30,.46));
+      background:var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border:1px solid var(--bd);
-      border-radius:22px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      position:relative;
-      overflow:hidden;
-    }
-    .card::before{
-      /* holographic edge */
-      content:"";
-      position:absolute; inset:-2px;
-      background: linear-gradient(135deg, rgba(87,230,255,.20), rgba(179,139,255,.16), rgba(66,255,181,.10));
-      opacity:.35;
-      filter: blur(10px);
-      pointer-events:none;
+      border-radius:26px;
+      box-shadow:var(--shadow);
     }
     .card-inner{
-      position:relative;
-      background: linear-gradient(180deg, rgba(6,10,22,.45), rgba(6,10,22,.32));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:18px;
-      padding:16px;
+      background:linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.58));
+      border:1px solid rgba(255,255,255,.5);
+      border-radius:22px;
     }
-
-    /* Inputs */
-    input, textarea{
-      color: var(--ink);
-      border:1px solid rgba(122,166,255,.22) !important;
-      background: rgba(8,12,26,.55) !important;
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+      border-radius:16px;padding:.62rem .95rem;font-weight:900;font-size:12px;user-select:none;
+      transition: transform .08s ease, filter .2s ease, background .2s ease, border-color .2s ease;
     }
-    input::placeholder, textarea::placeholder{ color: rgba(154,168,214,.55); }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn-primary{
+      color:#fff;
+      background: linear-gradient(135deg, #0f172a, #111827, #0b1220);
+      box-shadow: 0 12px 22px rgba(2,6,23,.18);
+    }
+    .btn-primary:hover{ filter: brightness(1.06); }
+    .btn-ghost{
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.75);
+    }
+    .btn-ghost:hover{ background: rgba(255,255,255,.92); }
+    .chip{
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:999px;padding:.35rem .7rem;font-size:12px;font-weight:900;
+      background: rgba(255,255,255,.70);
+      transition: all .2s ease;
+    }
+    .chip:hover{ background: rgba(255,255,255,.92); }
+    .chip-on{
+      background: linear-gradient(135deg, rgba(15,23,42,1), rgba(17,24,39,1));
+      color:#fff;border-color: rgba(15,23,42,1);
+      box-shadow: 0 10px 20px rgba(2,6,23,.18);
+    }
+    .badge{border-radius:999px;padding:.2rem .55rem;font-size:11px;font-weight:900}
+    .badge-dev{background:#e0f2fe;color:#075985}
+    .badge-prod{background:#dcfce7;color:#166534}
+    .badge-old{background:#fef3c7;color:#92400e}
+    .row{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:18px;padding:10px;
+      background: rgba(255,255,255,.55);
+      transition: transform .12s ease, background .2s ease, border-color .2s ease;
+    }
+    .row:hover{ background: rgba(255,255,255,.86); transform: translateY(-1px); }
+    .handle{cursor:grab}
+    .handle:active{cursor:grabbing}
+    .pill{
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:999px;padding:.25rem .65rem;font-size:11px;font-weight:900;
+      background: rgba(255,255,255,.65);
+    }
     input:focus, textarea:focus{
       outline:none;
       box-shadow: var(--ring);
-      border-color: rgba(87,230,255,.55) !important;
+      border-color: rgba(99,102,241,.55) !important;
     }
 
-    /* Buttons */
-    .btn{
-      display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-      border-radius:14px;
-      padding:.62rem .95rem;
-      font-weight:900;
-      font-size:12px;
-      user-select:none;
-      transition: transform .08s ease, filter .2s ease, background .2s ease, border-color .2s ease;
-      position:relative;
-      overflow:hidden;
-    }
-    .btn:active{ transform: translateY(1px) scale(.99); }
-
-    .btn-primary{
-      color:#061018;
-      background:
-        linear-gradient(135deg, rgba(87,230,255,1), rgba(122,166,255,1));
-      box-shadow: 0 18px 34px rgba(87,230,255,.18);
-      border: 1px solid rgba(255,255,255,.18);
-      text-shadow: 0 1px 0 rgba(255,255,255,.35);
-    }
-    .btn-primary:hover{ filter: brightness(1.06); }
-    .btn-primary::after{
-      /* shimmer */
-      content:"";
-      position:absolute;
-      top:-40%;
-      left:-60%;
-      width:50%;
-      height:180%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
-      transform: rotate(18deg);
-      opacity:.0;
-      transition: opacity .2s ease, left .6s ease;
-    }
-    .btn-primary:hover::after{ opacity:.65; left:120%; }
-
-    .btn-ghost{
-      color: var(--ink);
-      border:1px solid rgba(87,230,255,.22);
-      background: rgba(10,14,30,.35);
-      box-shadow: 0 12px 26px rgba(0,0,0,.28);
-    }
-    .btn-ghost:hover{
-      background: rgba(12,18,40,.55);
-      border-color: rgba(87,230,255,.38);
-      filter: brightness(1.03);
-    }
-
-    /* Chips / badges */
-    .chip{
-      border:1px solid rgba(122,166,255,.28);
-      border-radius:999px;
-      padding:.36rem .72rem;
-      font-size:12px;
-      font-weight:900;
-      color: rgba(231,236,255,.92);
-      background: rgba(8,12,26,.40);
-      transition: all .2s ease;
-      position:relative;
-    }
-    .chip:hover{
-      border-color: rgba(87,230,255,.55);
-      box-shadow: 0 0 0 1px rgba(87,230,255,.10), 0 0 26px rgba(87,230,255,.10);
-    }
-    .chip-on{
-      border-color: rgba(87,230,255,.70);
-      background: linear-gradient(135deg, rgba(87,230,255,.22), rgba(179,139,255,.12));
-      box-shadow: 0 0 0 1px rgba(87,230,255,.14), 0 0 36px rgba(87,230,255,.12);
-    }
-
-    .badge{border-radius:999px;padding:.2rem .6rem;font-size:11px;font-weight:900}
-    .badge-dev{background: rgba(87,230,255,.14); color: rgba(87,230,255,.92); border:1px solid rgba(87,230,255,.28)}
-    .badge-prod{background: rgba(66,255,181,.12); color: rgba(66,255,181,.92); border:1px solid rgba(66,255,181,.24)}
-    .badge-old{background: rgba(255,207,106,.12); color: rgba(255,207,106,.95); border:1px solid rgba(255,207,106,.22)}
-
-    .pill{
-      border:1px solid rgba(122,166,255,.22);
-      border-radius:999px;
-      padding:.25rem .65rem;
-      font-size:11px;
-      font-weight:900;
-      background: rgba(8,12,26,.36);
-      color: rgba(231,236,255,.92);
-    }
-
-    /* Rows */
-    .row{
-      border:1px solid rgba(122,166,255,.18);
-      border-radius:16px;
-      padding:10px;
-      background: rgba(8,12,26,.34);
-      transition: transform .12s ease, background .2s ease, border-color .2s ease;
-      position:relative;
-      overflow:hidden;
-    }
-    .row::before{
-      content:"";
-      position:absolute; inset:0;
-      background: linear-gradient(90deg, transparent, rgba(87,230,255,.08), transparent);
-      transform: translateX(-120%);
-      transition: transform .7s ease;
-      pointer-events:none;
-    }
-    .row:hover{
-      background: rgba(12,18,40,.46);
-      border-color: rgba(87,230,255,.28);
-      transform: translateY(-1px);
-    }
-    .row:hover::before{ transform: translateX(120%); }
-
-    .handle{cursor:grab; color: rgba(154,168,214,.8)}
-    .handle:active{cursor:grabbing}
-
-    /* Toast */
+    /* ====== Toast ====== */
     .toast-wrap{
       position: fixed;
       right: 18px;
@@ -271,112 +106,120 @@
       pointer-events: none;
     }
     .toast{
-      pointer-events:none;
-      min-width: 300px;
-      max-width: 440px;
+      pointer-events: none;
+      min-width: 280px;
+      max-width: 420px;
       padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(122,166,255,.22);
-      background: rgba(8,12,26,.62);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.5);
+      background: rgba(255,255,255,.72);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 22px 65px rgba(0,0,0,.55);
+      box-shadow: 0 18px 50px rgba(2,6,23,.14);
       display:flex;align-items:flex-start;gap:10px;
       transform: translateY(10px);
       opacity: 0;
       animation: toastIn .22s ease forwards;
-      position:relative;
-      overflow:hidden;
     }
-    .toast::before{
-      content:"";
-      position:absolute; inset:-1px;
-      background: linear-gradient(135deg, rgba(87,230,255,.18), rgba(179,139,255,.12), rgba(66,255,181,.10));
-      opacity:.35;
-      filter: blur(14px);
-      pointer-events:none;
+    .toast.hide{
+      animation: toastOut .22s ease forwards;
     }
-    .toast.hide{ animation: toastOut .22s ease forwards; }
     .toast .dot{
       margin-top: 4px;
       width:10px;height:10px;border-radius:999px;
+      box-shadow: 0 0 0 5px rgba(16,185,129,.12);
       flex: 0 0 auto;
-      box-shadow: 0 0 0 6px rgba(87,230,255,.10);
-      position:relative;
-      z-index:1;
     }
-    .toast.ok .dot{ background: var(--green); box-shadow: 0 0 0 6px rgba(66,255,181,.12); }
-    .toast.err .dot{ background: var(--red); box-shadow: 0 0 0 6px rgba(255,90,122,.12); }
+    .toast.ok .dot{ background:#10b981; box-shadow: 0 0 0 5px rgba(16,185,129,.12); }
+    .toast.err .dot{ background:#ef4444; box-shadow: 0 0 0 5px rgba(239,68,68,.12); }
     .toast .t{
       font-weight: 900;
       font-size: 12px;
-      color: rgba(231,236,255,.96);
+      color: #0f172a;
       line-height: 1.35;
       word-break: break-word;
-      position:relative;
-      z-index:1;
     }
     .toast .s{
       margin-top:2px;
       font-size: 11px;
-      color: rgba(154,168,214,.85);
-      position:relative;
-      z-index:1;
+      color: rgba(100,116,139,1);
     }
-    @keyframes toastIn{ from{ opacity:0; transform: translateY(12px);} to{ opacity:1; transform: translateY(0);} }
-    @keyframes toastOut{ from{ opacity:1; transform: translateY(0);} to{ opacity:0; transform: translateY(10px);} }
+    @keyframes toastIn{
+      from{ opacity:0; transform: translateY(12px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+    @keyframes toastOut{
+      from{ opacity:1; transform: translateY(0); }
+      to{ opacity:0; transform: translateY(10px); }
+    }
+
+    /* 小裝飾：頂部光暈 */
+    .top-glow{
+      position: fixed;
+      inset: -200px -200px auto -200px;
+      height: 360px;
+      background:
+        radial-gradient(closest-side at 20% 60%, rgba(99,102,241,.24), transparent 65%),
+        radial-gradient(closest-side at 70% 40%, rgba(14,165,233,.18), transparent 65%),
+        radial-gradient(closest-side at 90% 70%, rgba(34,197,94,.14), transparent 65%);
+      filter: blur(10px);
+      pointer-events:none;
+      z-index: 0;
+    }
   </style>
 </head>
 
 <body class="min-h-screen">
-  <div class="hud-bg"></div>
-  <div class="top-glow"></div>
+<div class="top-glow"></div>
 
 <script>
 /** =========================
  * ✅ 你只要改這裡
  * ========================= */
 const CONFIG = {
+  // 你的 Gist ID（網址最後那段）
   GIST_ID: "17db93f6b4d4813bcbcfc66cc4ba343f",
+
+  // 登入帳密（純前端）
   LOGIN_USER: "gavin",
   LOGIN_PASS: "1234",
+
+  // 檔名固定（不要改）
   FILES: { dev:"worker_dev.json", prod:"worker_prod.json", old:"worker_old.json" }
 };
 </script>
 
-<!-- Toast -->
+<!-- ✅ Toast 容器（狀態顯示幾秒就消失） -->
 <div id="toastWrap" class="toast-wrap"></div>
 
 <!-- ===== 登入畫面 ===== -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center p-6 relative z-10">
-  <div class="w-full max-w-md card p-4">
-    <div class="card-inner">
+  <div class="w-full max-w-md card p-6">
+    <div class="card-inner p-4">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl bg-cyan-400/20 border border-cyan-200/20 text-cyan-100 flex items-center justify-center font-black">
-          G
-        </div>
+        <div class="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black shadow-soft">G</div>
         <div class="min-w-0">
-          <div class="text-lg font-extrabold">GavinTeam · Worker 組裝後台</div>
-          <div class="text-xs opacity-80 mt-0.5">Sci-Fi HUD Mode</div>
+          <div class="text-lg font-extrabold text-slate-900">Worker 組裝後台</div>
+          <div class="text-xs text-slate-500 mt-0.5">登入後：切換狀態 → 改模組 → 組裝 → 貼 Cloudflare</div>
         </div>
       </div>
 
       <div class="mt-5 space-y-3">
         <div>
-          <label class="text-xs font-bold opacity-80">帳號</label>
-          <input id="user" class="mt-1 w-full px-3 py-2 rounded-2xl text-sm" placeholder="輸入帳號">
+          <label class="text-xs font-bold text-slate-600">帳號</label>
+          <input id="user" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="輸入帳號">
         </div>
         <div>
-          <label class="text-xs font-bold opacity-80">密碼</label>
-          <input id="pass" type="password" class="mt-1 w-full px-3 py-2 rounded-2xl text-sm" placeholder="輸入密碼">
+          <label class="text-xs font-bold text-slate-600">密碼</label>
+          <input id="pass" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="輸入密碼">
         </div>
 
         <button id="loginBtn" class="btn btn-primary w-full">登入</button>
-        <div id="loginMsg" class="text-xs text-rose-300"></div>
+        <div id="loginMsg" class="text-xs text-red-700"></div>
       </div>
 
-      <div class="mt-5 text-[11px] opacity-75">
-        DEV｜PROD｜OLD（切換後自動讀取對應雲端檔案）
+      <div class="mt-5 text-[11px] text-slate-500">
+        分類：DEV｜PROD｜OLD（切換後自動讀取對應雲端檔案）
       </div>
     </div>
   </div>
@@ -385,15 +228,15 @@ const CONFIG = {
 <!-- ===== 主畫面 ===== -->
 <div id="app" class="hidden relative z-10">
   <!-- Top bar -->
-  <div class="sticky top-0 z-20 bg-black/25 backdrop-blur border-b border-white/5">
+  <div class="sticky top-0 z-20 bg-white/35 backdrop-blur border-b border-white/40">
     <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
-          <div class="text-xl font-extrabold">Worker 組裝後台</div>
+          <div class="text-xl font-extrabold text-slate-900">Worker 組裝後台</div>
           <span id="slotBadge" class="badge badge-dev">DEV</span>
           <span id="tokenStatePill" class="pill">Token：未載入</span>
         </div>
-        <div class="text-xs opacity-80 mt-1">
+        <div class="text-xs text-slate-600 mt-1">
           狀態切換會自動讀取雲端檔案；輸出前請先按「組裝」。
         </div>
       </div>
@@ -408,32 +251,33 @@ const CONFIG = {
   </div>
 
   <div class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-    <!-- 左：控制台 -->
+    <!-- 左：版本操作（✅ 已移除「介面說明/操作引導」整塊） -->
     <div class="lg:col-span-3">
       <div class="card p-4">
-        <div class="card-inner">
-          <div class="text-sm font-extrabold">控制台</div>
+        <div class="card-inner p-4">
+          <div class="text-sm font-extrabold text-slate-900">控制台</div>
 
-          <div class="mt-4">
-            <div class="text-sm font-extrabold">Token 外掛</div>
-            <div class="text-xs opacity-75 mt-1">URL(#token / ?token) → 本機儲存 → 手動貼上</div>
+          <!-- ✅ Token 外掛區塊 -->
+          <div class="mt-3">
+            <div class="text-sm font-extrabold text-slate-900">Token 外掛</div>
+            <div class="text-xs text-slate-500 mt-1">取用順序：URL(#token / ?token) → 本機儲存 → 手動貼上</div>
 
             <div class="mt-3">
-              <label class="text-xs font-bold opacity-80">GitHub Token（只存在這台瀏覽器）</label>
-              <input id="tokenInput" type="password" class="mt-1 w-full px-3 py-2 rounded-2xl text-sm"
+              <label class="text-xs font-bold text-slate-600">GitHub Token（只存在這台瀏覽器）</label>
+              <input id="tokenInput" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70"
                      placeholder="貼上 ghp_... 或 github_pat_...">
               <div class="mt-2 grid grid-cols-2 gap-2">
                 <button id="saveTokenBtn" class="btn btn-primary">儲存 Token</button>
                 <button id="clearTokenBtn" class="btn btn-ghost">清除 Token</button>
               </div>
-              <div id="tokenMsg" class="mt-2 text-xs opacity-80"></div>
+              <div id="tokenMsg" class="mt-2 text-xs text-slate-500"></div>
             </div>
           </div>
 
-          <div class="h-px bg-white/5 my-4"></div>
+          <div class="h-px bg-white/50 my-4"></div>
 
-          <div class="text-sm font-extrabold">版本資訊</div>
-          <div id="metaText" class="text-xs opacity-80 mt-1">尚未讀取</div>
+          <div class="text-sm font-extrabold text-slate-900">版本資訊</div>
+          <div id="metaText" class="text-xs text-slate-600 mt-1">尚未讀取</div>
 
           <div class="mt-3 grid grid-cols-2 gap-2">
             <button id="reloadBtn" class="btn btn-ghost">重新讀取</button>
@@ -446,10 +290,11 @@ const CONFIG = {
           </div>
 
           <div class="mt-4">
-            <label class="text-xs font-bold opacity-80">專案名稱</label>
-            <input id="projectName" class="mt-1 w-full px-3 py-2 rounded-2xl text-sm" placeholder="例如：LINE 工具 Worker">
+            <label class="text-xs font-bold text-slate-600">專案名稱</label>
+            <input id="projectName" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm bg-white/70" placeholder="例如：LINE 工具 Worker">
           </div>
 
+          <!-- ✅ 原本 msg 會常駐，現在改成 toast，不再佔版面 -->
           <div id="msg" class="hidden"></div>
         </div>
       </div>
@@ -458,11 +303,11 @@ const CONFIG = {
     <!-- 中：模組清單 -->
     <div class="lg:col-span-4">
       <div class="card p-4">
-        <div class="card-inner">
+        <div class="card-inner p-4">
           <div class="flex items-center justify-between">
             <div>
-              <div class="text-sm font-extrabold">模組清單</div>
-              <div class="text-xs opacity-80 mt-1">拖曳「≡」可排序（排序會影響組裝順序）</div>
+              <div class="text-sm font-extrabold text-slate-900">模組清單</div>
+              <div class="text-xs text-slate-600 mt-1">拖曳「≡」可排序（排序會影響組裝順序）</div>
             </div>
             <button id="addModuleBtn" class="btn btn-ghost">＋ 新增模組</button>
           </div>
@@ -475,11 +320,11 @@ const CONFIG = {
     <!-- 右：編輯 + 輸出 -->
     <div class="lg:col-span-5">
       <div class="card p-4">
-        <div class="card-inner">
+        <div class="card-inner p-4">
           <div class="flex items-start justify-between gap-2 flex-wrap">
             <div>
-              <div class="text-sm font-extrabold">模組編輯</div>
-              <div class="text-xs opacity-80 mt-1">正在編輯：<span id="editingName" class="font-bold">（未選）</span></div>
+              <div class="text-sm font-extrabold text-slate-900">模組編輯</div>
+              <div class="text-xs text-slate-600 mt-1">正在編輯：<span id="editingName" class="font-bold text-slate-800">（未選）</span></div>
             </div>
             <div class="flex gap-2">
               <button id="templateBtn" class="btn btn-ghost">插入範本</button>
@@ -487,15 +332,15 @@ const CONFIG = {
             </div>
           </div>
 
-          <textarea id="editor" class="mt-3 w-full h-[280px] px-3 py-3 rounded-2xl text-sm"
+          <textarea id="editor" class="mt-3 w-full h-[280px] px-3 py-3 border rounded-2xl text-sm bg-white/70"
             placeholder="點左邊模組名稱開始編輯"></textarea>
 
-          <div class="h-px bg-white/5 my-4"></div>
+          <div class="h-px bg-white/50 my-4"></div>
 
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <div>
-              <div class="text-sm font-extrabold">輸出：worker.js</div>
-              <div class="text-xs opacity-80 mt-1">按組裝 → 複製 → 貼到 Cloudflare Worker</div>
+              <div class="text-sm font-extrabold text-slate-900">輸出：worker.js</div>
+              <div class="text-xs text-slate-600 mt-1">按組裝 → 複製 → 貼到 Cloudflare Worker</div>
             </div>
             <div class="flex gap-2">
               <button id="buildBtn" class="btn btn-primary">組裝</button>
@@ -504,7 +349,7 @@ const CONFIG = {
             </div>
           </div>
 
-          <textarea id="output" class="mt-3 w-full h-[270px] px-3 py-3 rounded-2xl text-sm mono"
+          <textarea id="output" class="mt-3 w-full h-[270px] px-3 py-3 border rounded-2xl text-sm mono bg-white/70"
             placeholder="// 按「組裝」產生完整 worker.js"></textarea>
         </div>
       </div>
@@ -536,17 +381,25 @@ function toast(text, ok=true, sub=""){
     </div>
   `;
   wrap.appendChild(el);
+
+  // 多個 toast：保留最多 3 個
   while (wrap.children.length > 3) wrap.removeChild(wrap.firstChild);
 
+  // 自動消失（預設 2.6 秒）
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     el.classList.add("hide");
     setTimeout(()=> el.remove(), 260);
   }, 2600);
 }
-function setMsg(text, ok=true){ toast(text, ok); }
+
+// 舊 msg API：改導到 toast（不再常駐顯示）
+function setMsg(text, ok=true){
+  toast(text, ok);
+}
 function tokenMsg(text, ok=true){
-  $("tokenMsg").className = "mt-2 text-xs " + (ok ? "text-emerald-200" : "text-rose-200");
+  // tokenMsg 原本顯示在左側小字，保留但也用 toast 提醒
+  $("tokenMsg").className = "mt-2 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
   $("tokenMsg").textContent = text || "";
   if (text) toast(text, ok, "Token 外掛");
 }
@@ -569,17 +422,23 @@ const TOKEN_STORE_KEY = "WB_GH_TOKEN";
 let runtimeToken = "";
 
 function cleanToken(input){
-  return String(input||"").trim().replace(/\s+/g,"").replace(/[^\x20-\x7E]/g,"");
+  return String(input||"")
+    .trim()
+    .replace(/\s+/g,"")
+    .replace(/[^\x20-\x7E]/g,"");
 }
 function getTokenFromUrl(){
+  // 1) hash: #token=xxxx
   try{
     const hash = location.hash || "";
     if (hash.startsWith("#")) {
-      const sp = new URLSearchParams(hash.slice(1));
+      const h = hash.slice(1);
+      const sp = new URLSearchParams(h);
       const t = sp.get("token");
       if (t) return cleanToken(t);
     }
   }catch{}
+  // 2) query: ?token=xxxx
   try{
     const sp = new URLSearchParams(location.search || "");
     const t = sp.get("token");
@@ -609,7 +468,7 @@ function setTokenPill(){
   const pill = $("tokenStatePill");
   if (t){
     const tail = t.slice(-6);
-    pill.className = "pill border-emerald-200/20 bg-emerald-400/10 text-emerald-200";
+    pill.className = "pill bg-emerald-50 text-emerald-700 border-emerald-200";
     pill.textContent = `Token：已載入（…${tail}）`;
   }else{
     pill.className = "pill";
@@ -622,7 +481,10 @@ function setTokenPill(){
  * ===================================================== */
 function authHeaders(){
   const t = resolveToken();
-  const h = { "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+  const h = {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
   if (!t) return h;
   h["Authorization"] = t.startsWith("github_pat_") ? `Bearer ${t}` : `token ${t}`;
   return h;
@@ -694,7 +556,13 @@ function notFound(){ return new Response("Not Found", { status: 404 }); }
 `// 路由（你只要一直加 if）
 async function router(request, env, ctx) {
   const url = new URL(request.url);
+
   if (url.pathname === "/") return text("OK");
+
+  // 範例：
+  // if (url.pathname.startsWith("/api/quiz")) return handleQuiz(request, env, ctx);
+  // if (url.pathname === "/webhook") return handleWebhook(request, env, ctx);
+
   return notFound();
 }
 `},
@@ -730,13 +598,13 @@ function renderModules(){
 
     row.innerHTML = `
       <div class="flex items-start gap-2 min-w-0 flex-1">
-        <div class="handle font-black select-none mt-0.5" title="拖曳排序">≡</div>
+        <div class="handle text-slate-400 font-black select-none mt-0.5" title="拖曳排序">≡</div>
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <input type="checkbox" class="h-4 w-4" ${m.enabled ? "checked" : ""} data-act="toggle">
-            <button class="text-left font-extrabold text-sm truncate hover:underline" data-act="edit">${escapeHtml(m.name)}</button>
+            <button class="text-left font-extrabold text-sm text-slate-900 truncate hover:underline" data-act="edit">${escapeHtml(m.name)}</button>
           </div>
-          <div class="text-[11px] opacity-80 mt-1 mono truncate">${m.enabled ? "啟用中" : "停用"} · ${m.id}</div>
+          <div class="text-[11px] text-slate-600 mt-1 mono truncate">${m.enabled ? "啟用中" : "停用"} · ${m.id}</div>
         </div>
       </div>
       <div class="flex gap-1 flex-shrink-0">
@@ -755,7 +623,11 @@ function renderModules(){
       el.addEventListener("click", () => onModuleAction(el.getAttribute("data-act"), m.id));
     });
 
-    row.addEventListener("dragstart", (e) => { e.dataTransfer.setData("text/plain", m.id); row.style.opacity = ".55"; });
+    // 拖曳排序
+    row.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", m.id);
+      row.style.opacity = ".55";
+    });
     row.addEventListener("dragend", () => row.style.opacity = "1");
     row.addEventListener("dragover", (e) => { e.preventDefault(); });
     row.addEventListener("drop", (e) => {
@@ -842,6 +714,7 @@ function buildWorker(){
 /** =========== 雲端操作（依狀態） =========== */
 async function loadSlot(){
   setTokenPill();
+
   const raw = await gistReadFile(slot);
   let obj;
   try { obj = JSON.parse(raw || "{}"); } catch { obj = {}; }
@@ -857,32 +730,47 @@ async function loadSlot(){
   renderModules();
   setMsg(`✅ 已讀取：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
 }
+
 async function saveSlot(){
   setTokenPill();
+
   project.name = $("projectName").value.trim() || project.name;
   project.updatedAt = nowISO();
   await gistWriteFile(slot, JSON.stringify(project, null, 2));
   renderMeta();
   setMsg(`✅ 已儲存：${CONFIG.FILES[slot]}（${slot.toUpperCase()}）`, true);
 }
+
 async function copySlot(from, to){
   setTokenPill();
+
   const raw = await gistReadFile(from);
   await gistWriteFile(to, raw);
   setMsg(`✅ 已複製：${from.toUpperCase()} → ${to.toUpperCase()}`, true);
 }
+
+/** ✅ 按狀態就會自動讀檔 */
 async function setSlot(next){
   slot = next;
   slotBadge(slot);
   chips(slot);
   renderMeta();
-  try{ await loadSlot(); }
-  catch(e){ setMsg(String(e.message || e), false); }
+  try{
+    await loadSlot();
+  }catch(e){
+    setMsg(String(e.message || e), false);
+  }
 }
 
 /** =========== 登入 =========== */
-function showApp(){ $("loginScreen").classList.add("hidden"); $("app").classList.remove("hidden"); }
-function showLogin(){ $("app").classList.add("hidden"); $("loginScreen").classList.remove("hidden"); }
+function showApp(){
+  $("loginScreen").classList.add("hidden");
+  $("app").classList.remove("hidden");
+}
+function showLogin(){
+  $("app").classList.add("hidden");
+  $("loginScreen").classList.remove("hidden");
+}
 function setLoginMsg(t){ $("loginMsg").textContent = t || ""; }
 
 $("loginBtn").onclick = () => {
@@ -892,38 +780,67 @@ $("loginBtn").onclick = () => {
     localStorage.setItem("WB_LOGIN_OK", "1");
     showApp();
     setSlot("dev");
-    toast("登入成功", true, "HUD Online · DEV Loaded");
+    toast("登入成功", true, "已切到 DEV 並自動讀取");
   } else {
     setLoginMsg("帳號或密碼錯誤");
     toast("登入失敗：帳號或密碼錯誤", false);
   }
 };
-$("logoutBtn").onclick = () => { localStorage.removeItem("WB_LOGIN_OK"); showLogin(); toast("已登出", true); };
 
-/** =========== Token 外掛 =========== */
+$("logoutBtn").onclick = () => {
+  localStorage.removeItem("WB_LOGIN_OK");
+  showLogin();
+  toast("已登出", true);
+};
+
+/** =========== Token 外掛 UI 綁定 =========== */
 $("saveTokenBtn").onclick = async () => {
   const t = cleanToken($("tokenInput").value);
   if (!t) return tokenMsg("請先貼上 token", false);
+
   runtimeToken = t;
   const ok = setTokenToStore(t);
   setTokenPill();
   $("tokenInput").value = "";
-  tokenMsg(ok ? "✅ Token 已儲存（同瀏覽器下次不用再貼）" : "✅ Token 已載入（但瀏覽器阻擋儲存）", true);
+  tokenMsg(ok ? "✅ Token 已儲存（同瀏覽器下次不用再貼）" : "✅ Token 已載入（但瀏覽器阻擋儲存，重開需再貼）", true);
 
-  try{ if (!$("app").classList.contains("hidden")) await loadSlot(); }
-  catch(e){ setMsg(String(e.message||e), false); }
+  try{
+    if (!$("app").classList.contains("hidden")) await loadSlot();
+  }catch(e){
+    setMsg(String(e.message||e), false);
+  }
 };
-$("clearTokenBtn").onclick = () => { runtimeToken=""; clearTokenStore(); setTokenPill(); tokenMsg("已清除 Token", true); };
+
+$("clearTokenBtn").onclick = () => {
+  runtimeToken = "";
+  clearTokenStore();
+  setTokenPill();
+  tokenMsg("已清除 Token（本機儲存已移除）", true);
+};
 
 /** =========== 綁定 UI =========== */
 $("slotDev").onclick  = async () => await setSlot("dev");
 $("slotProd").onclick = async () => await setSlot("prod");
 $("slotOld").onclick  = async () => await setSlot("old");
 
-$("reloadBtn").onclick = async () => { try{ await loadSlot(); }catch(e){ setMsg(String(e.message||e), false);} };
-$("saveBtn").onclick = async () => { try{ await saveSlot(); }catch(e){ setMsg(String(e.message||e), false);} };
-$("devToProdBtn").onclick = async () => { try{ await copySlot("dev","prod"); if (slot==="prod") await loadSlot(); }catch(e){ setMsg(String(e.message||e), false);} };
-$("prodToOldBtn").onclick = async () => { try{ await copySlot("prod","old"); if (slot==="old") await loadSlot(); }catch(e){ setMsg(String(e.message||e), false);} };
+$("reloadBtn").onclick = async () => {
+  try { await loadSlot(); } catch(e){ setMsg(String(e.message||e), false); }
+};
+$("saveBtn").onclick = async () => {
+  try { await saveSlot(); } catch(e){ setMsg(String(e.message||e), false); }
+};
+$("devToProdBtn").onclick = async () => {
+  try {
+    await copySlot("dev","prod");
+    if (slot === "prod") await loadSlot();
+  } catch(e){ setMsg(String(e.message||e), false); }
+};
+$("prodToOldBtn").onclick = async () => {
+  try {
+    await copySlot("prod","old");
+    if (slot === "old") await loadSlot();
+  } catch(e){ setMsg(String(e.message||e), false); }
+};
 
 $("addModuleBtn").onclick = () => {
   const name = prompt("模組名稱（建議 30_功能名稱）", "30_新功能");
@@ -964,15 +881,23 @@ $("formatBtn").onclick = () => {
   setMsg("已簡易整理格式", true);
 };
 
-$("buildBtn").onclick = () => { $("output").value = buildWorker(); renderMeta(); setMsg("✅ 組裝完成：可直接貼到 Cloudflare Worker", true); };
+$("buildBtn").onclick = () => {
+  $("output").value = buildWorker();
+  renderMeta();
+  setMsg("✅ 組裝完成：可直接貼到 Cloudflare Worker", true);
+};
+
 $("copyBtn").onclick = async () => {
   try{
     const v = $("output").value || "";
     if (!v.trim()) return setMsg("請先按組裝", false);
     await navigator.clipboard.writeText(v);
     setMsg("已複製輸出內容", true);
-  }catch{ setMsg("複製失敗：請確認剪貼簿權限", false); }
+  }catch{
+    setMsg("複製失敗：請確認瀏覽器剪貼簿權限", false);
+  }
 };
+
 $("downloadBtn").onclick = () => {
   const content = $("output").value || "";
   if (!content.trim()) return setMsg("請先按組裝", false);
@@ -992,13 +917,17 @@ $("downloadBtn").onclick = () => {
   chips(slot);
   renderMeta();
   renderModules();
+
   setTokenPill();
 
+  // 如果網址有帶 token，順便存起來（方便下次）
   const urlT = getTokenFromUrl();
   if (urlT){
     runtimeToken = urlT;
-    setTokenToStore(urlT);
+    setTokenToStore(urlT); // 存不起來也沒關係
     tokenMsg("✅ 已從網址載入 Token（並嘗試存到本機）", true);
+
+    // 清掉 #token 避免外流
     try{
       if (location.hash && location.hash.includes("token=")){
         history.replaceState(null, "", location.pathname + location.search);
@@ -1010,8 +939,12 @@ $("downloadBtn").onclick = () => {
   }
 
   const ok = localStorage.getItem("WB_LOGIN_OK") === "1";
-  if (ok){ showApp(); setSlot("dev"); }
-  else { showLogin(); }
+  if (ok){
+    showApp();
+    setSlot("dev");
+  } else {
+    showLogin();
+  }
 })();
 </script>
 
