@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Worker 組裝後台｜GavinTeam</title>
+  <title>Worker 組裝後台｜GavinTeam（外掛 Token 版）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body{font-family:system-ui,"Microsoft JhengHei";}
@@ -27,6 +27,7 @@
     .row:hover{background:#f8fafc}
     .handle{cursor:grab}
     .handle:active{cursor:grabbing}
+    .pill{border:1px solid #e5e7eb;border-radius:999px;padding:.25rem .6rem;font-size:11px;font-weight:900}
   </style>
 </head>
 
@@ -39,10 +40,8 @@ const CONFIG = {
   // 你的 Gist ID（網址最後那段）
   GIST_ID: "17db93f6b4d4813bcbcfc66cc4ba343f",
 
-  // 你的 GitHub Token（要能讀寫 gist）
-  // ✅ 支援：github_pat_...（fine-grained） / ghp_...（classic）
-  // ⚠️ 建議不要把 token 公開給別人看
-  GITHUB_TOKEN: "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",
+  // ✅ 外掛 Token 版：不再把 token 寫死在這裡
+  // GITHUB_TOKEN: "xxxxx"  ← 已移除
 
   // 登入帳密（純前端）
   LOGIN_USER: "gavin",
@@ -90,10 +89,11 @@ const CONFIG = {
   <div class="sticky top-0 z-20 bg-slate-50/80 backdrop-blur border-b">
     <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
       <div class="min-w-0">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <div class="text-xl font-extrabold text-slate-900">Worker 組裝後台</div>
           <span id="slotBadge" class="badge badge-dev">DEV</span>
           <span id="autoLoadHint" class="text-[11px] text-slate-500">（切換狀態會自動讀取雲端檔案）</span>
+          <span id="tokenStatePill" class="pill bg-slate-50 text-slate-600">Token：未載入</span>
         </div>
         <div class="text-xs text-slate-500 mt-1">
           直覺流程：<span class="font-bold text-slate-700">①切換狀態（自動讀）</span> → <span class="font-bold text-slate-700">②修改模組</span> → <span class="font-bold text-slate-700">③組裝輸出</span>
@@ -128,6 +128,25 @@ const CONFIG = {
             <strong>③ 組裝輸出</strong>
             <div class="text-xs text-slate-600 mt-1">按「組裝」產生 worker.js → 複製貼到 Cloudflare。</div>
           </div>
+        </div>
+
+        <div class="h-px bg-slate-100 my-4"></div>
+
+        <!-- ✅ Token 外掛區塊 -->
+        <div class="text-sm font-extrabold text-slate-900">Token 外掛</div>
+        <div class="text-xs text-slate-500 mt-1">
+          取用順序：URL(#token/ ?token) → 本機儲存 → 手動貼上
+        </div>
+
+        <div class="mt-3">
+          <label class="text-xs font-bold text-slate-600">GitHub Token（只存在這台瀏覽器）</label>
+          <input id="tokenInput" type="password" class="mt-1 w-full px-3 py-2 border rounded-2xl text-sm"
+                 placeholder="貼上 ghp_... 或 github_pat_...">
+          <div class="mt-2 grid grid-cols-2 gap-2">
+            <button id="saveTokenBtn" class="btn btn-primary">儲存 Token</button>
+            <button id="clearTokenBtn" class="btn btn-ghost">清除 Token</button>
+          </div>
+          <div id="tokenMsg" class="mt-2 text-xs text-slate-500"></div>
         </div>
 
         <div class="h-px bg-slate-100 my-4"></div>
@@ -234,30 +253,111 @@ function escapeHtml(s){
 }
 
 /** =====================================================
- * ✅ 核心修正：token 清理 + 正確授權格式
+ * ✅ 外掛 Token：URL / localStorage / 手動輸入
  * ===================================================== */
+const TOKEN_STORE_KEY = "WB_GH_TOKEN";
+let runtimeToken = ""; // 本次 session 用的 token（不寫死在 CONFIG）
+
 function cleanToken(input){
-  // 1) trim 2) 移除所有空白字元 3) 移除非 ASCII（避免 header non-ISO 報錯）
   return String(input||"")
     .trim()
     .replace(/\s+/g,"")
     .replace(/[^\x20-\x7E]/g,"");
 }
-function authHeaders(){
-  const t = cleanToken(CONFIG.GITHUB_TOKEN);
 
-  // ❗ Headers 只放 ASCII，避免 non-ISO-8859-1 error
+function getTokenFromUrl(){
+  // 1) hash: #token=xxxx
+  try{
+    const hash = location.hash || "";
+    if (hash.startsWith("#")) {
+      const h = hash.slice(1);
+      const sp = new URLSearchParams(h);
+      const t = sp.get("token");
+      if (t) return cleanToken(t);
+    }
+  }catch{}
+
+  // 2) query: ?token=xxxx
+  try{
+    const sp = new URLSearchParams(location.search || "");
+    const t = sp.get("token");
+    if (t) return cleanToken(t);
+  }catch{}
+
+  return "";
+}
+
+function getTokenFromStore(){
+  try{
+    return cleanToken(localStorage.getItem(TOKEN_STORE_KEY) || "");
+  }catch{
+    return "";
+  }
+}
+
+function setTokenToStore(t){
+  try{
+    localStorage.setItem(TOKEN_STORE_KEY, cleanToken(t));
+    return true;
+  }catch{
+    return false;
+  }
+}
+
+function clearTokenStore(){
+  try{
+    localStorage.removeItem(TOKEN_STORE_KEY);
+    return true;
+  }catch{
+    return false;
+  }
+}
+
+function resolveToken(){
+  // 優先：URL → localStorage → runtimeToken（可能由手動輸入設定）
+  const u = getTokenFromUrl();
+  if (u) return u;
+
+  const s = getTokenFromStore();
+  if (s) return s;
+
+  return cleanToken(runtimeToken);
+}
+
+function setTokenPill(){
+  const t = resolveToken();
+  const pill = $("tokenStatePill");
+  if (t){
+    const tail = t.slice(-6);
+    pill.className = "pill bg-emerald-50 text-emerald-700 border-emerald-200";
+    pill.textContent = `Token：已載入（…${tail}）`;
+  }else{
+    pill.className = "pill bg-slate-50 text-slate-600";
+    pill.textContent = "Token：未載入";
+  }
+}
+
+function tokenMsg(text, ok=true){
+  $("tokenMsg").className = "mt-2 text-xs " + (ok ? "text-emerald-700" : "text-red-700");
+  $("tokenMsg").textContent = text || "";
+}
+
+/** =====================================================
+ * ✅ 正確授權格式（fine-grained / classic）
+ * ===================================================== */
+function authHeaders(){
+  const t = resolveToken();
+
   const h = {
     "Accept": "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28"
   };
   if (!t) return h;
 
-  // fine-grained: github_pat_... → Bearer
-  // classic: ghp_... → token
   h["Authorization"] = t.startsWith("github_pat_") ? `Bearer ${t}` : `token ${t}`;
   return h;
 }
+
 async function readGitHubError(res){
   let txt = "";
   try { txt = await res.text(); } catch {}
@@ -279,18 +379,27 @@ async function gistGet(){
   return await res.json();
 }
 async function gistReadFile(slot){
+  const resHeaders = authHeaders();
+  if (!resHeaders.Authorization){
+    throw new Error("尚未載入 GitHub Token：請在左側「Token 外掛」貼上後儲存，或用網址帶 #token=...");
+  }
+
   const gist = await gistGet();
   const filename = CONFIG.FILES[slot];
   const file = gist.files?.[filename];
   if (!file) throw new Error("Gist 找不到檔案：" + filename);
-  // 你現在檔案很小，不用 raw_url；保留 content 即可
   return file.content || "{}";
 }
 async function gistWriteFile(slot, content){
+  const resHeaders = authHeaders();
+  if (!resHeaders.Authorization){
+    throw new Error("尚未載入 GitHub Token：請先載入 token 才能寫入 gist");
+  }
+
   const filename = CONFIG.FILES[slot];
   const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
     method: "PATCH",
-    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    headers: { ...resHeaders, "Content-Type": "application/json" },
     body: JSON.stringify({ files: { [filename]: { content } } })
   });
   if (!res.ok) throw new Error(await readGitHubError(res));
@@ -483,6 +592,8 @@ function buildWorker(){
  * 雲端操作（依狀態）
  * =========== */
 async function loadSlot(){
+  setTokenPill();
+
   const raw = await gistReadFile(slot);
   let obj;
   try { obj = JSON.parse(raw || "{}"); } catch { obj = {}; }
@@ -500,6 +611,8 @@ async function loadSlot(){
 }
 
 async function saveSlot(){
+  setTokenPill();
+
   project.name = $("projectName").value.trim() || project.name;
   project.updatedAt = nowISO();
   await gistWriteFile(slot, JSON.stringify(project, null, 2));
@@ -508,6 +621,8 @@ async function saveSlot(){
 }
 
 async function copySlot(from, to){
+  setTokenPill();
+
   const raw = await gistReadFile(from);
   await gistWriteFile(to, raw);
   setMsg(`✅ 已複製：${from.toUpperCase()} → ${to.toUpperCase()}`, true);
@@ -554,6 +669,37 @@ $("loginBtn").onclick = () => {
 $("logoutBtn").onclick = () => {
   localStorage.removeItem("WB_LOGIN_OK");
   showLogin();
+};
+
+/** ===========
+ * Token 外掛 UI 綁定
+ * =========== */
+$("saveTokenBtn").onclick = async () => {
+  const t = cleanToken($("tokenInput").value);
+  if (!t) return tokenMsg("請先貼上 token", false);
+
+  // 先寫到 runtimeToken（避免某些瀏覽器 storage 被阻擋時完全不能用）
+  runtimeToken = t;
+
+  // 試著存到 localStorage
+  const ok = setTokenToStore(t);
+  setTokenPill();
+  $("tokenInput").value = "";
+  tokenMsg(ok ? "✅ Token 已儲存（下次同瀏覽器不用再貼）" : "✅ Token 已載入（但瀏覽器阻擋儲存，重開需再貼）", true);
+
+  // 有 token 後，直接幫你讀一次目前狀態檔（若你已經在 app 中）
+  try{
+    if (!$("app").classList.contains("hidden")) await loadSlot();
+  }catch(e){
+    setMsg(String(e.message||e), false);
+  }
+};
+
+$("clearTokenBtn").onclick = () => {
+  runtimeToken = "";
+  clearTokenStore();
+  setTokenPill();
+  tokenMsg("已清除 Token（本機儲存已移除）", true);
 };
 
 /** ===========
@@ -657,6 +803,29 @@ $("downloadBtn").onclick = () => {
   chips(slot);
   renderMeta();
   renderModules();
+
+  // 初始化 token 狀態：URL / localStorage / runtime
+  setTokenPill();
+
+  // 如果網址有帶 token（#token 或 ?token），順便把它存起來（方便下次）
+  const urlT = getTokenFromUrl();
+  if (urlT){
+    runtimeToken = urlT;
+    setTokenToStore(urlT); // 存不起來也沒關係
+    tokenMsg("✅ 已從網址載入 Token（並嘗試存到本機）", true);
+
+    // 建議把 hash token 清掉，避免你複製網址時不小心外流
+    // 只清 #token，保留其它 hash 參數（如果有的話）
+    try{
+      if (location.hash && location.hash.includes("token=")){
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+    }catch{}
+  }else{
+    // 如果 localStorage 有 token，顯示提示（不曝光內容）
+    const st = getTokenFromStore();
+    if (st) tokenMsg("已載入本機儲存的 Token（同瀏覽器有效）", true);
+  }
 
   const ok = localStorage.getItem("WB_LOGIN_OK") === "1";
   if (ok){
